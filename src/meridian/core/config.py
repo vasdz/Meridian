@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default=["*"])
 
     # Server
-    host: str = Field(default="0.0.0.0", alias="HOST")
+    host: str = Field(default="0.0.0.0", alias="HOST")  # nosec B104 - configurable via env
     port: int = Field(default=8000, alias="PORT")
     workers: int = Field(default=4, alias="WORKERS")
 

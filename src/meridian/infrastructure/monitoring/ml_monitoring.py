@@ -475,7 +475,7 @@ class PredictionMonitor:
         """Generate unique alert ID."""
         timestamp = datetime.now().isoformat()
         hash_input = f"{self.model_id}_{timestamp}"
-        return hashlib.md5(hash_input.encode()).hexdigest()[:12]
+        return hashlib.sha256(hash_input.encode(), usedforsecurity=False).hexdigest()[:12]
 
     def get_metrics(self) -> ModelMetrics:
         """Get current monitoring metrics."""
@@ -610,8 +610,9 @@ class SLAMonitor:
     ) -> Alert:
         """Create an SLA alert."""
         return Alert(
-            alert_id=hashlib.md5(
-                f"{self.model_id}_{datetime.now().isoformat()}".encode()
+            alert_id=hashlib.sha256(
+                f"{self.model_id}_{datetime.now().isoformat()}".encode(),
+                usedforsecurity=False,
             ).hexdigest()[:12],
             timestamp=datetime.now(),
             severity=severity,
@@ -830,8 +831,9 @@ class ModelMonitoringService:
         for result in results:
             if result.is_drifted:
                 alert = Alert(
-                    alert_id=hashlib.md5(
-                        f"{self.model_id}_drift_{result.feature_name}_{datetime.now().isoformat()}".encode()
+                    alert_id=hashlib.sha256(
+                        f"{self.model_id}_drift_{result.feature_name}_{datetime.now().isoformat()}".encode(),
+                        usedforsecurity=False,
                     ).hexdigest()[:12],
                     timestamp=datetime.now(),
                     severity=AlertSeverity.WARNING,
