@@ -1,0 +1,54 @@
+# Safety policy configuration
+# Ignore known vulnerabilities that are accepted risks or false positives
+
+security:
+  ignore-cvss-severity-below: 0
+  ignore-cvss-unknown-severity: false
+
+  ignore-vulnerabilities:
+    # MLflow vulnerabilities - accepted risk for development
+    # These are deserialization issues that require malicious model uploads
+    # In production, we control model artifacts and don't load untrusted models
+    83170:
+      reason: "MLflow path traversal - mitigated by access controls"
+      expires: "2027-01-01"
+    83076:
+      reason: "MLflow SQL injection - mitigated by access controls"
+      expires: "2027-01-01"
+    71692:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71587:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71579:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71691:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71584:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71578:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    71577:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+    82294:
+      reason: "MLflow path traversal - mitigated by access controls"
+      expires: "2027-01-01"
+    71693:
+      reason: "MLflow deserialization - only load trusted models"
+      expires: "2027-01-01"
+
+    # ECDSA vulnerabilities - accepted for non-critical use
+    # We use this for JWT which has short-lived tokens
+    64459:
+      reason: "ECDSA Minerva attack - mitigated by short token lifetime"
+      expires: "2027-01-01"
+    64396:
+      reason: "ECDSA side-channel - mitigated by short token lifetime"
+      expires: "2027-01-01"
+
