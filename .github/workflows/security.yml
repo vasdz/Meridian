@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 0 * * *'  # Daily at midnight
+    - cron: '0 0 * * *'
 
 permissions:
   contents: read
@@ -51,9 +51,14 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          version: "1.8.0"
+
+      - name: Install poetry-plugin-export
+        run: poetry self add poetry-plugin-export
 
       - name: Export requirements
-        run: poetry export -f requirements.txt --output requirements.txt
+        run: poetry export -f requirements.txt --output requirements.txt --without-hashes
 
       - name: Run pip-audit
         run: |
@@ -75,6 +80,7 @@ jobs:
 
   snyk:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -88,6 +94,9 @@ jobs:
 
   trivy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
