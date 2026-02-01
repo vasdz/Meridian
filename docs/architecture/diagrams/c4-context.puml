@@ -1,0 +1,27 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Meridian - System Context Diagram
+
+Person(marketer, "Marketing Analyst", "Uses uplift predictions for campaign targeting")
+Person(data_scientist, "Data Scientist", "Builds and monitors ML models")
+Person(developer, "Developer", "Integrates API into applications")
+
+System(meridian, "Meridian Platform", "Marketing Analytics & Causal Inference Platform")
+
+System_Ext(crm, "CRM System", "Customer data source")
+System_Ext(cdp, "Customer Data Platform", "Unified customer profiles")
+System_Ext(campaign, "Campaign Management", "Marketing campaign execution")
+System_Ext(bi, "BI Tools", "Reporting and dashboards")
+
+Rel(marketer, meridian, "Runs experiments, views results")
+Rel(data_scientist, meridian, "Trains models, monitors performance")
+Rel(developer, meridian, "Calls API for predictions", "REST/JSON")
+
+Rel(meridian, crm, "Fetches customer data")
+Rel(meridian, cdp, "Gets customer features")
+Rel(meridian, campaign, "Provides targeting lists")
+Rel(bi, meridian, "Queries metrics")
+
+@enduml
+

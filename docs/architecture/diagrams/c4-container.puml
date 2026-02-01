@@ -1,0 +1,44 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Meridian - Container Diagram
+
+Person(user, "API User", "Marketing Analyst / Developer")
+
+System_Boundary(meridian, "Meridian Platform") {
+    Container(api, "API Gateway", "FastAPI", "REST API for predictions and experiments")
+    Container(worker, "Celery Workers", "Python/Celery", "Async task processing")
+    Container(scheduler, "Task Scheduler", "Celery Beat", "Scheduled jobs")
+
+    ContainerDb(postgres, "PostgreSQL", "PostgreSQL 16", "Transactional data, experiments")
+    ContainerDb(redis, "Redis", "Redis 7", "Cache, rate limiting, task queue")
+
+    Container(ml_service, "ML Models", "Python", "Uplift, forecasting, pricing models")
+    ContainerDb(mlflow, "MLflow", "MLflow", "Model registry and tracking")
+
+    Container(spark, "Spark Jobs", "PySpark", "Feature engineering, batch processing")
+    ContainerDb(feature_store, "Feature Store", "Feast/Custom", "Online and offline features")
+
+    Container(kafka, "Event Bus", "Kafka", "Domain events streaming")
+}
+
+System_Ext(vault, "HashiCorp Vault", "Secrets management")
+
+Rel(user, api, "HTTPS/JSON")
+Rel(api, postgres, "Reads/Writes", "asyncpg")
+Rel(api, redis, "Cache/Rate limit", "aioredis")
+Rel(api, ml_service, "Predictions")
+Rel(api, kafka, "Publishes events")
+
+Rel(worker, postgres, "Reads/Writes")
+Rel(worker, redis, "Task queue")
+Rel(worker, ml_service, "Model training")
+Rel(worker, mlflow, "Logs models")
+
+Rel(scheduler, worker, "Triggers tasks")
+Rel(spark, feature_store, "Computes features")
+Rel(ml_service, feature_store, "Gets features")
+Rel(api, vault, "Gets secrets")
+
+@enduml
+

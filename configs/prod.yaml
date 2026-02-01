@@ -1,0 +1,23 @@
+# Production configuration
+defaults:
+  - base
+
+app:
+  environment: production
+  debug: false
+
+server:
+  workers: 8
+
+database:
+  pool_size: 20
+  max_overflow: 40
+
+security:
+  rate_limit_enabled: true
+  rate_limit_requests_per_minute: 100
+
+logging:
+  level: INFO
+  format: json
+

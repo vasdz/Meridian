@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=meridian_test
+      - DB_USER=meridian
+      - DB_PASSWORD=meridian
+      - REDIS_HOST=redis
+      - ENVIRONMENT=test
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - test-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=meridian
+      - POSTGRES_PASSWORD=meridian
+      - POSTGRES_DB=meridian_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meridian"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    command: pytest tests -v --cov=src/meridian
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=meridian_test
+      - REDIS_HOST=redis
+    depends_on:
+      - app
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+

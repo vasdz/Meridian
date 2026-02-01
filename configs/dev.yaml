@@ -1,0 +1,22 @@
+# Development configuration
+defaults:
+  - base
+
+app:
+  environment: development
+  debug: true
+
+database:
+  host: localhost
+  port: 5432
+
+redis:
+  host: localhost
+
+security:
+  rate_limit_enabled: false
+
+logging:
+  level: DEBUG
+  format: console
+

@@ -1,0 +1,50 @@
+# Forecasting model configuration
+model:
+  type: deepar  # deepar, nbeats, prophet
+
+  deepar:
+    prediction_length: 14
+    context_length: 28
+    num_layers: 2
+    hidden_size: 40
+    dropout: 0.1
+    learning_rate: 0.001
+    epochs: 50
+    batch_size: 32
+
+  nbeats:
+    prediction_length: 14
+    context_length: 28
+    stack_types:
+      - trend
+      - seasonality
+      - generic
+    num_stacks: 3
+
+training:
+  validation_split: 0.2
+  early_stopping_patience: 5
+
+quantiles:
+  - 0.1
+  - 0.5
+  - 0.9
+
+features:
+  static_categorical:
+    - item_id
+    - category
+    - store_id
+  static_real:
+    - avg_price
+  time_varying:
+    - price
+    - promotion
+    - holiday
+
+evaluation:
+  metrics:
+    - mase  # Mean Absolute Scaled Error
+    - mape  # Mean Absolute Percentage Error
+    - coverage  # Prediction interval coverage
+
