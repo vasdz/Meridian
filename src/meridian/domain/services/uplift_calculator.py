@@ -1,11 +1,9 @@
 """Uplift calculator domain service."""
 
 import numpy as np
-from typing import Optional
 
-from meridian.domain.models.uplift import UpliftPrediction, ConfidenceInterval
 from meridian.core.logging import get_logger
-
+from meridian.domain.models.uplift import ConfidenceInterval, UpliftPrediction
 
 logger = get_logger(__name__)
 
@@ -54,7 +52,7 @@ class UpliftCalculator:
     def rank_customers_by_uplift(
         self,
         predictions: list[UpliftPrediction],
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
     ) -> list[UpliftPrediction]:
         """Rank customers by uplift score (descending)."""
         sorted_predictions = sorted(
@@ -116,4 +114,3 @@ class UpliftCalculator:
                 segments["sure_things"].append(pred)
 
         return segments
-

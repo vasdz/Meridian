@@ -1,2 +1,1 @@
 """Domain unit tests package."""
-

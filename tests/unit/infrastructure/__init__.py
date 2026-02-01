@@ -1,2 +1,1 @@
 """Infrastructure unit tests package."""
-

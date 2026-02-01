@@ -1,9 +1,6 @@
 """Data validation Spark job using Great Expectations concepts."""
 
-from typing import Optional
-
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -18,11 +15,13 @@ class DataValidator:
     def expect_column_to_exist(self, df, column: str) -> bool:
         """Check if column exists in DataFrame."""
         result = column in df.columns
-        self.validation_results.append({
-            "check": "column_exists",
-            "column": column,
-            "passed": result,
-        })
+        self.validation_results.append(
+            {
+                "check": "column_exists",
+                "column": column,
+                "passed": result,
+            }
+        )
         return result
 
     def expect_column_values_to_not_be_null(
@@ -39,13 +38,15 @@ class DataValidator:
         null_rate = null_count / total if total > 0 else 0
 
         result = null_rate <= threshold
-        self.validation_results.append({
-            "check": "null_rate",
-            "column": column,
-            "null_rate": null_rate,
-            "threshold": threshold,
-            "passed": result,
-        })
+        self.validation_results.append(
+            {
+                "check": "null_rate",
+                "column": column,
+                "null_rate": null_rate,
+                "threshold": threshold,
+                "passed": result,
+            }
+        )
         return result
 
     def expect_column_values_to_be_between(
@@ -58,19 +59,19 @@ class DataValidator:
         """Check if values are within range."""
         from pyspark.sql import functions as F
 
-        out_of_range = df.filter(
-            (F.col(column) < min_value) | (F.col(column) > max_value)
-        ).count()
+        out_of_range = df.filter((F.col(column) < min_value) | (F.col(column) > max_value)).count()
 
         result = out_of_range == 0
-        self.validation_results.append({
-            "check": "value_range",
-            "column": column,
-            "min": min_value,
-            "max": max_value,
-            "out_of_range_count": out_of_range,
-            "passed": result,
-        })
+        self.validation_results.append(
+            {
+                "check": "value_range",
+                "column": column,
+                "min": min_value,
+                "max": max_value,
+                "out_of_range_count": out_of_range,
+                "passed": result,
+            }
+        )
         return result
 
     def get_validation_report(self) -> dict:
@@ -106,4 +107,3 @@ def validate_transactions_df(spark, df) -> dict:
     logger.info("Validation complete", **report)
 
     return report
-

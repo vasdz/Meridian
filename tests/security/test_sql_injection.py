@@ -19,9 +19,7 @@ class TestSQLInjection:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("payload", SQL_INJECTION_PAYLOADS)
-    async def test_uplift_customer_id_injection(
-        self, client: AsyncClient, auth_headers, payload
-    ):
+    async def test_uplift_customer_id_injection(self, client: AsyncClient, auth_headers, payload):
         """Test SQL injection via customer_ids."""
         response = await client.post(
             "/v1/uplift/predict",
@@ -34,9 +32,7 @@ class TestSQLInjection:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("payload", SQL_INJECTION_PAYLOADS)
-    async def test_experiment_name_injection(
-        self, client: AsyncClient, auth_headers, payload
-    ):
+    async def test_experiment_name_injection(self, client: AsyncClient, auth_headers, payload):
         """Test SQL injection via experiment name."""
         response = await client.post(
             "/v1/experiments",
@@ -50,9 +46,7 @@ class TestSQLInjection:
         assert response.status_code in [400, 422]
 
     @pytest.mark.asyncio
-    async def test_query_parameter_injection(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_query_parameter_injection(self, client: AsyncClient, auth_headers):
         """Test SQL injection via query parameters."""
         response = await client.get(
             "/v1/experiments",
@@ -61,4 +55,3 @@ class TestSQLInjection:
         )
 
         assert response.status_code in [400, 422]
-

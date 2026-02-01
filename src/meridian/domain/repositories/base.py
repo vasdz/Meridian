@@ -1,16 +1,16 @@
 """Base repository interface."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional
+from typing import TypeVar
 
 ModelType = TypeVar("ModelType")
 
 
-class AbstractRepository(ABC, Generic[ModelType]):
+class AbstractRepository[ModelType](ABC):
     """Abstract repository pattern interface."""
 
     @abstractmethod
-    async def get(self, id: str) -> Optional[ModelType]:
+    async def get(self, id: str) -> ModelType | None:
         """Get entity by ID."""
         pass
 
@@ -42,4 +42,3 @@ class AbstractRepository(ABC, Generic[ModelType]):
     async def exists(self, id: str) -> bool:
         """Check if entity exists."""
         pass
-

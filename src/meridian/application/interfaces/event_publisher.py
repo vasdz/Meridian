@@ -1,7 +1,6 @@
 """Event publisher interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 from meridian.core.events import DomainEvent
 
@@ -18,4 +17,3 @@ class EventPublisherInterface(ABC):
     async def publish_batch(self, events: list[DomainEvent]) -> None:
         """Publish multiple domain events."""
         pass
-

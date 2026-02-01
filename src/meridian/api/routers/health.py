@@ -2,13 +2,12 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from meridian.core.config import settings
-from meridian.infrastructure.database.connection import check_db_connection
 from meridian.infrastructure.cache.redis_cache import check_redis_connection
-
+from meridian.infrastructure.database.connection import check_db_connection
 
 router = APIRouter(tags=["health"])
 
@@ -64,4 +63,3 @@ async def metrics():
         "requests_total": 0,
         "request_duration_seconds": 0,
     }
-

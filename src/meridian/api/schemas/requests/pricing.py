@@ -1,7 +1,5 @@
 """Pricing request schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +8,7 @@ class ProductPricing(BaseModel):
 
     product_id: str = Field(..., min_length=1, max_length=64)
     current_price: float = Field(..., gt=0)
-    cost: Optional[float] = Field(None, ge=0)
+    cost: float | None = Field(None, ge=0)
 
 
 class PriceOptimizationRequest(BaseModel):
@@ -27,8 +25,7 @@ class PriceOptimizationRequest(BaseModel):
         pattern="^(maximize_profit|maximize_revenue)$",
         description="Optimization objective",
     )
-    constraints: Optional[dict] = Field(
+    constraints: dict | None = Field(
         None,
         description="Optimization constraints",
     )
-

@@ -4,8 +4,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from meridian.core.exceptions import MeridianBaseError
-from meridian.core.logging import get_logger, get_correlation_id
-
+from meridian.core.logging import get_correlation_id, get_logger
 
 logger = get_logger(__name__)
 
@@ -88,4 +87,3 @@ def setup_exception_handlers(app: FastAPI) -> None:
                 }
             },
         )
-

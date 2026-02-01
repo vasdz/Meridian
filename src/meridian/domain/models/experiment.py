@@ -1,8 +1,7 @@
 """Experiment domain model."""
 
 from dataclasses import dataclass, field
-from datetime import datetime, date
-from typing import Optional
+from datetime import date, datetime
 
 from meridian.core.constants import ExperimentStatus
 
@@ -13,7 +12,7 @@ class ExperimentVariant:
 
     name: str
     weight: float = 0.5
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclass
@@ -51,17 +50,17 @@ class Experiment:
     secondary_metrics: list[str] = field(default_factory=list)
 
     # Design
-    target_sample_size: Optional[int] = None
-    target_mde: Optional[float] = None  # Minimum Detectable Effect
+    target_sample_size: int | None = None
+    target_mde: float | None = None  # Minimum Detectable Effect
     confidence_level: float = 0.95
 
     # Duration
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: date | None = None
+    end_date: date | None = None
 
     # Results
-    results: Optional[ExperimentResults] = None
-    winner_variant: Optional[str] = None
+    results: ExperimentResults | None = None
+    winner_variant: str | None = None
 
     # Timestamps
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -69,10 +68,7 @@ class Experiment:
 
     def can_start(self) -> bool:
         """Check if experiment can be started."""
-        return (
-            self.status == ExperimentStatus.DRAFT
-            and len(self.variants) >= 2
-        )
+        return self.status == ExperimentStatus.DRAFT and len(self.variants) >= 2
 
     def start(self) -> None:
         """Start the experiment."""
@@ -83,7 +79,7 @@ class Experiment:
         self.start_date = date.today()
         self.updated_at = datetime.utcnow()
 
-    def stop(self, results: Optional[ExperimentResults] = None) -> None:
+    def stop(self, results: ExperimentResults | None = None) -> None:
         """Stop the experiment."""
         if self.status != ExperimentStatus.RUNNING:
             raise ValueError("Experiment is not running")
@@ -111,10 +107,9 @@ class Experiment:
         return self.results.is_significant
 
     @property
-    def duration_days(self) -> Optional[int]:
+    def duration_days(self) -> int | None:
         """Get experiment duration in days."""
         if self.start_date is None:
             return None
         end = self.end_date or date.today()
         return (end - self.start_date).days
-

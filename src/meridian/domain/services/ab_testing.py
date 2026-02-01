@@ -10,20 +10,20 @@ including:
 - Sequential testing (optional early stopping)
 """
 
-import numpy as np
-from scipy import stats
 from dataclasses import dataclass, field
-from typing import Optional, Literal
 from enum import Enum
 
-from meridian.core.logging import get_logger
+import numpy as np
+from scipy import stats
 
+from meridian.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class CorrectionMethod(Enum):
     """Multiple testing correction methods."""
+
     NONE = "none"
     BONFERRONI = "bonferroni"
     HOLM = "holm"
@@ -32,6 +32,7 @@ class CorrectionMethod(Enum):
 
 class HypothesisType(Enum):
     """Type of statistical test hypothesis."""
+
     TWO_SIDED = "two_sided"
     GREATER = "greater"
     LESS = "less"
@@ -100,7 +101,7 @@ class TestResult:
     relative_effect: float  # Percentage change
 
     p_value: float
-    p_value_corrected: Optional[float] = None
+    p_value_corrected: float | None = None
     confidence_interval: tuple[float, float] = (0.0, 0.0)
 
     is_significant: bool = False
@@ -404,7 +405,7 @@ class ABTestAnalyzer:
 
         # Z-test for proportions
         pooled_rate = (control_successes + treatment_successes) / (control_total + treatment_total)
-        se = np.sqrt(pooled_rate * (1 - pooled_rate) * (1/control_total + 1/treatment_total))
+        se = np.sqrt(pooled_rate * (1 - pooled_rate) * (1 / control_total + 1 / treatment_total))
 
         if se > 0:
             z_stat = absolute_effect / se
@@ -503,8 +504,8 @@ class ABTestAnalyzer:
 
         # Confidence interval for difference
         se = np.sqrt(
-            np.var(control_values, ddof=1) / len(control_values) +
-            np.var(treatment_values, ddof=1) / len(treatment_values)
+            np.var(control_values, ddof=1) / len(control_values)
+            + np.var(treatment_values, ddof=1) / len(treatment_values)
         )
 
         # Degrees of freedom (Welch-Satterthwaite)
@@ -512,7 +513,7 @@ class ABTestAnalyzer:
         v1 = np.var(control_values, ddof=1)
         v2 = np.var(treatment_values, ddof=1)
 
-        df = ((v1/n1 + v2/n2)**2) / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+        df = ((v1 / n1 + v2 / n2) ** 2) / ((v1 / n1) ** 2 / (n1 - 1) + (v2 / n2) ** 2 / (n2 - 1))
 
         t_crit = stats.t.ppf(1 - self.alpha / 2, df)
         ci = (absolute_effect - t_crit * se, absolute_effect + t_crit * se)
@@ -610,11 +611,11 @@ class ABTestAnalyzer:
 
 def design_experiment(
     name: str,
-    baseline_rate: Optional[float] = None,
-    baseline_mean: Optional[float] = None,
-    baseline_std: Optional[float] = None,
-    mde_relative: Optional[float] = None,
-    mde_absolute: Optional[float] = None,
+    baseline_rate: float | None = None,
+    baseline_mean: float | None = None,
+    baseline_std: float | None = None,
+    mde_relative: float | None = None,
+    mde_absolute: float | None = None,
     alpha: float = 0.05,
     power: float = 0.8,
     daily_traffic: int = 1000,
@@ -659,7 +660,9 @@ def design_experiment(
 
     else:
         if baseline_mean is None or baseline_std is None or mde_absolute is None:
-            raise ValueError("baseline_mean, baseline_std, and mde_absolute required for continuous outcomes")
+            raise ValueError(
+                "baseline_mean, baseline_std, and mde_absolute required for continuous outcomes"
+            )
 
         sample_size = analyzer.calculate_sample_size_continuous(
             baseline_mean,
@@ -701,4 +704,3 @@ def design_experiment(
     )
 
     return design
-

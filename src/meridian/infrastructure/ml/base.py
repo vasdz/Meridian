@@ -1,7 +1,6 @@
 """Base ML model implementation."""
 
-from abc import ABC, abstractmethod
-from typing import Optional
+from abc import ABC
 
 import numpy as np
 
@@ -40,11 +39,12 @@ class BaseMLModel(MLModelInterface, ABC):
     def load(self, path: str) -> None:
         """Load model from path."""
         import joblib
+
         self._model = joblib.load(path)
         self._is_fitted = True
 
     def save(self, path: str) -> None:
         """Save model to path."""
         import joblib
-        joblib.dump(self._model, path)
 
+        joblib.dump(self._model, path)

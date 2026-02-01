@@ -1,7 +1,5 @@
 """Experiment request schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +8,7 @@ class ExperimentVariant(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=64)
     weight: float = Field(default=0.5, ge=0, le=1)
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class CreateExperimentRequest(BaseModel):
@@ -39,7 +37,7 @@ class CreateExperimentRequest(BaseModel):
         default="conversion_rate",
         description="Primary metric to optimize",
     )
-    target_mde: Optional[float] = Field(
+    target_mde: float | None = Field(
         None,
         gt=0,
         lt=1,
@@ -50,10 +48,9 @@ class CreateExperimentRequest(BaseModel):
 class UpdateExperimentRequest(BaseModel):
     """Request schema for updating an experiment."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=128)
-    hypothesis: Optional[str] = Field(None, min_length=10, max_length=1000)
-    status: Optional[str] = Field(
+    name: str | None = Field(None, min_length=1, max_length=128)
+    hypothesis: str | None = Field(None, min_length=10, max_length=1000)
+    status: str | None = Field(
         None,
         pattern="^(draft|running|completed|archived)$",
     )
-

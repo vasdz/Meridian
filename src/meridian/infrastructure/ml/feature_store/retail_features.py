@@ -7,14 +7,13 @@ Includes:
 - Communication channel features
 """
 
+from dataclasses import dataclass
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-from typing import Optional
-from dataclasses import dataclass
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -54,14 +53,92 @@ class RFMCalculator:
     SEGMENTS = {
         "Champions": ["555", "554", "544", "545", "454", "455", "445"],
         "Loyal": ["543", "444", "435", "355", "354", "345", "344", "335"],
-        "Potential Loyalists": ["553", "551", "552", "541", "542", "533", "532", "531", "452", "451", "442", "441", "431", "453", "433", "432", "423", "353", "352", "351", "342", "341", "333", "323"],
+        "Potential Loyalists": [
+            "553",
+            "551",
+            "552",
+            "541",
+            "542",
+            "533",
+            "532",
+            "531",
+            "452",
+            "451",
+            "442",
+            "441",
+            "431",
+            "453",
+            "433",
+            "432",
+            "423",
+            "353",
+            "352",
+            "351",
+            "342",
+            "341",
+            "333",
+            "323",
+        ],
         "New Customers": ["512", "511", "422", "421", "412", "411", "311"],
-        "Promising": ["525", "524", "523", "522", "521", "515", "514", "513", "425", "424", "413", "414", "415", "315", "314", "313"],
+        "Promising": [
+            "525",
+            "524",
+            "523",
+            "522",
+            "521",
+            "515",
+            "514",
+            "513",
+            "425",
+            "424",
+            "413",
+            "414",
+            "415",
+            "315",
+            "314",
+            "313",
+        ],
         "Need Attention": ["535", "534", "443", "434", "343", "334", "325", "324"],
         "About to Sleep": ["331", "321", "312", "221", "213", "231", "241", "251"],
-        "At Risk": ["255", "254", "245", "244", "253", "252", "243", "242", "235", "234", "225", "224", "153", "152", "145", "143", "142", "135", "134", "133", "125", "124"],
+        "At Risk": [
+            "255",
+            "254",
+            "245",
+            "244",
+            "253",
+            "252",
+            "243",
+            "242",
+            "235",
+            "234",
+            "225",
+            "224",
+            "153",
+            "152",
+            "145",
+            "143",
+            "142",
+            "135",
+            "134",
+            "133",
+            "125",
+            "124",
+        ],
         "Hibernating": ["155", "154", "144", "214", "215", "115", "114", "113"],
-        "Lost": ["111", "112", "121", "131", "141", "151", "211", "212", "222", "223", "232", "233"],
+        "Lost": [
+            "111",
+            "112",
+            "121",
+            "131",
+            "141",
+            "151",
+            "211",
+            "212",
+            "222",
+            "223",
+            "232",
+            "233",
+        ],
     }
 
     def __init__(
@@ -75,9 +152,9 @@ class RFMCalculator:
         self.monetary_bins = monetary_bins
 
         # Thresholds (will be fitted)
-        self._recency_thresholds: Optional[np.ndarray] = None
-        self._frequency_thresholds: Optional[np.ndarray] = None
-        self._monetary_thresholds: Optional[np.ndarray] = None
+        self._recency_thresholds: np.ndarray | None = None
+        self._frequency_thresholds: np.ndarray | None = None
+        self._monetary_thresholds: np.ndarray | None = None
 
     def fit(
         self,
@@ -89,16 +166,13 @@ class RFMCalculator:
 
         # Calculate quantile thresholds
         self._recency_thresholds = np.percentile(
-            recency,
-            np.linspace(0, 100, self.recency_bins + 1)[1:-1]
+            recency, np.linspace(0, 100, self.recency_bins + 1)[1:-1]
         )
         self._frequency_thresholds = np.percentile(
-            frequency,
-            np.linspace(0, 100, self.frequency_bins + 1)[1:-1]
+            frequency, np.linspace(0, 100, self.frequency_bins + 1)[1:-1]
         )
         self._monetary_thresholds = np.percentile(
-            monetary,
-            np.linspace(0, 100, self.monetary_bins + 1)[1:-1]
+            monetary, np.linspace(0, 100, self.monetary_bins + 1)[1:-1]
         )
 
         logger.info(
@@ -177,7 +251,7 @@ class RFMCalculator:
         """Calculate RFM features for multiple customers."""
 
         results = []
-        for r, f, m in zip(recency, frequency, monetary):
+        for r, f, m in zip(recency, frequency, monetary, strict=False):
             rfm = self.calculate(r, f, m)
             results.append(rfm.to_dict())
 
@@ -214,9 +288,9 @@ class BehavioralFeatureExtractor:
         customer_id: str,
         date_col: str = "transaction_date",
         amount_col: str = "amount",
-        category_col: Optional[str] = "category",
-        is_promo_col: Optional[str] = "is_promo",
-        discount_col: Optional[str] = "discount_amount",
+        category_col: str | None = "category",
+        is_promo_col: str | None = "is_promo",
+        discount_col: str | None = "discount_amount",
     ) -> dict[str, float]:
         """
         Extract behavioral features from transaction history.
@@ -234,7 +308,7 @@ class BehavioralFeatureExtractor:
             Dictionary of behavioral features
         """
         if len(transactions) == 0:
-            return {name: 0.0 for name in self.feature_names}
+            return dict.fromkeys(self.feature_names, 0.0)
 
         # Ensure datetime
         transactions = transactions.copy()
@@ -267,9 +341,11 @@ class BehavioralFeatureExtractor:
         features["std_basket_size"] = transactions[amount_col].std() if len(transactions) > 1 else 0
 
         # Time preferences
-        features["preferred_day_of_week"] = transactions[date_col].dt.dayofweek.mode().iloc[0] if len(transactions) > 0 else 0
+        features["preferred_day_of_week"] = (
+            transactions[date_col].dt.dayofweek.mode().iloc[0] if len(transactions) > 0 else 0
+        )
 
-        if hasattr(transactions[date_col].dt, 'hour'):
+        if hasattr(transactions[date_col].dt, "hour"):
             hours = transactions[date_col].dt.hour
             features["preferred_hour"] = hours.mode().iloc[0] if len(hours) > 0 else 12
             features["morning_ratio"] = (hours < 12).mean()
@@ -440,8 +516,8 @@ class CommunicationChannelEncoder:
     def encode(
         self,
         channel: str,
-        channel_history: Optional[list[str]] = None,
-        open_rates: Optional[dict[str, float]] = None,
+        channel_history: list[str] | None = None,
+        open_rates: dict[str, float] | None = None,
     ) -> dict[str, float]:
         """Encode channel features."""
 
@@ -476,7 +552,7 @@ class CommunicationChannelEncoder:
 def create_uplift_features(
     customer_data: pd.DataFrame,
     transactions: pd.DataFrame,
-    reference_date: Optional[datetime] = None,
+    reference_date: datetime | None = None,
     customer_id_col: str = "customer_id",
     date_col: str = "transaction_date",
     amount_col: str = "amount",
@@ -505,7 +581,7 @@ def create_uplift_features(
     )
 
     # Initialize extractors
-    behavioral_extractor = BehavioralFeatureExtractor()
+    BehavioralFeatureExtractor()
     external_encoder = ExternalFactorEncoder()
 
     # Calculate RFM for all customers
@@ -523,12 +599,14 @@ def create_uplift_features(
         frequency = len(cust_txns)
         monetary = cust_txns[amount_col].sum()
 
-        customer_rfm.append({
-            customer_id_col: cid,
-            "recency": recency,
-            "frequency": frequency,
-            "monetary": monetary,
-        })
+        customer_rfm.append(
+            {
+                customer_id_col: cid,
+                "recency": recency,
+                "frequency": frequency,
+                "monetary": monetary,
+            }
+        )
 
     rfm_df = pd.DataFrame(customer_rfm)
 
@@ -558,4 +636,3 @@ def create_uplift_features(
     logger.info("Uplift features created", n_features=len(result.columns))
 
     return result
-

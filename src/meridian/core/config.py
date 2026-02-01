@@ -1,7 +1,6 @@
 """Application configuration using Pydantic Settings."""
 
 from functools import lru_cache
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,7 +27,7 @@ class Settings(BaseSettings):
     encryption_salt: str = Field(
         default="change-me-in-production-must-be-16-bytes",
         alias="ENCRYPTION_SALT",
-        description="Salt for encryption key derivation (min 16 characters)"
+        description="Salt for encryption key derivation (min 16 characters)",
     )
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
     access_token_expire_minutes: int = Field(default=30)
@@ -77,7 +76,7 @@ class Settings(BaseSettings):
     redis_host: str = Field(default="localhost", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
     redis_db: int = Field(default=0, alias="REDIS_DB")
-    redis_password: Optional[str] = Field(default=None, alias="REDIS_PASSWORD")
+    redis_password: str | None = Field(default=None, alias="REDIS_PASSWORD")
 
     @property
     def redis_url(self) -> str:
@@ -94,7 +93,7 @@ class Settings(BaseSettings):
     # Vault
     vault_enabled: bool = Field(default=False, alias="VAULT_ENABLED")
     vault_address: str = Field(default="http://localhost:8200", alias="VAULT_ADDRESS")
-    vault_token: Optional[str] = Field(default=None, alias="VAULT_TOKEN")
+    vault_token: str | None = Field(default=None, alias="VAULT_TOKEN")
 
     # Kafka
     kafka_enabled: bool = Field(default=False, alias="KAFKA_ENABLED")
@@ -127,7 +126,7 @@ class Settings(BaseSettings):
     )
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
@@ -135,4 +134,3 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
-

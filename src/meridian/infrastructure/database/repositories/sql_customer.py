@@ -1,7 +1,5 @@
 """SQL Customer repository implementation."""
 
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,17 +48,13 @@ class SQLCustomerRepository(CustomerRepository):
             features=entity.features,
         )
 
-    async def get(self, id: str) -> Optional[Customer]:
-        result = await self.session.execute(
-            select(CustomerModel).where(CustomerModel.id == id)
-        )
+    async def get(self, id: str) -> Customer | None:
+        result = await self.session.execute(select(CustomerModel).where(CustomerModel.id == id))
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Customer]:
-        result = await self.session.execute(
-            select(CustomerModel).limit(limit).offset(offset)
-        )
+        result = await self.session.execute(select(CustomerModel).limit(limit).offset(offset))
         models = result.scalars().all()
         return [self._to_domain(m) for m in models]
 
@@ -73,7 +67,9 @@ class SQLCustomerRepository(CustomerRepository):
     async def update(self, entity: Customer) -> Customer:
         model = await self.session.get(CustomerModel, entity.id)
         if model:
-            model.segment = entity.segment.value if hasattr(entity.segment, "value") else entity.segment
+            model.segment = (
+                entity.segment.value if hasattr(entity.segment, "value") else entity.segment
+            )
             model.region = entity.region
             model.total_spend = entity.total_spend
             model.transaction_count = entity.transaction_count
@@ -88,12 +84,10 @@ class SQLCustomerRepository(CustomerRepository):
         return False
 
     async def exists(self, id: str) -> bool:
-        result = await self.session.execute(
-            select(CustomerModel.id).where(CustomerModel.id == id)
-        )
+        result = await self.session.execute(select(CustomerModel.id).where(CustomerModel.id == id))
         return result.scalar_one_or_none() is not None
 
-    async def get_by_external_id(self, external_id: str) -> Optional[Customer]:
+    async def get_by_external_id(self, external_id: str) -> Customer | None:
         result = await self.session.execute(
             select(CustomerModel).where(CustomerModel.external_id == external_id)
         )
@@ -120,10 +114,7 @@ class SQLCustomerRepository(CustomerRepository):
             select(CustomerModel).where(CustomerModel.id.in_(customer_ids))
         )
         models = result.scalars().all()
-        return {
-            m.id: self._to_domain(m).to_feature_dict()
-            for m in models
-        }
+        return {m.id: self._to_domain(m).to_feature_dict() for m in models}
 
     async def update_segment(self, customer_id: str, new_segment: str) -> bool:
         model = await self.session.get(CustomerModel, customer_id)
@@ -132,4 +123,3 @@ class SQLCustomerRepository(CustomerRepository):
             await self.session.flush()
             return True
         return False
-

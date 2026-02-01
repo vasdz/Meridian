@@ -1,11 +1,8 @@
 """Optimize price use case."""
 
-from typing import Optional
-
-from meridian.domain.models.pricing import PricePoint, PriceOptimizationResult
-from meridian.domain.services.pricing_optimizer import PricingOptimizer
 from meridian.core.logging import get_logger
-
+from meridian.domain.models.pricing import PriceOptimizationResult, PricePoint
+from meridian.domain.services.pricing_optimizer import PricingOptimizer
 
 logger = get_logger(__name__)
 
@@ -15,7 +12,7 @@ class OptimizePriceUseCase:
 
     def __init__(
         self,
-        pricing_optimizer: Optional[PricingOptimizer] = None,
+        pricing_optimizer: PricingOptimizer | None = None,
         elasticity_model=None,
     ):
         self.optimizer = pricing_optimizer or PricingOptimizer()
@@ -25,7 +22,7 @@ class OptimizePriceUseCase:
         self,
         products: list[dict],
         objective: str = "maximize_profit",
-        constraints: Optional[dict] = None,
+        constraints: dict | None = None,
     ) -> PriceOptimizationResult:
         """
         Execute price optimization.
@@ -69,4 +66,3 @@ class OptimizePriceUseCase:
         )
 
         return result
-

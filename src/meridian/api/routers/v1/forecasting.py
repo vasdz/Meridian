@@ -1,19 +1,18 @@
 """Demand forecasting endpoints."""
 
-from typing import Annotated, Optional
 from datetime import date, timedelta
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from meridian.api.dependencies.auth import get_current_user, TokenData
+from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.api.schemas.requests.forecasting import DemandForecastRequest
 from meridian.api.schemas.responses.forecasting import (
-    DemandForecastResponse,
     DemandForecast,
+    DemandForecastResponse,
 )
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -21,8 +20,10 @@ router = APIRouter()
 
 # Extended schemas for production API
 
+
 class ForecastConfigRequest(BaseModel):
     """Configuration for forecasting."""
+
     horizon_days: int = Field(default=14, ge=1, le=90)
     granularity: str = Field(default="daily")
     include_intervals: bool = Field(default=True)
@@ -31,28 +32,32 @@ class ForecastConfigRequest(BaseModel):
 
 class BatchForecastRequest(BaseModel):
     """Request for batch forecasting."""
+
     series_ids: list[str] = Field(..., min_length=1, max_length=1000)
     config: ForecastConfigRequest = Field(default_factory=ForecastConfigRequest)
 
 
 class ForecastPoint(BaseModel):
     """Single forecast point."""
+
     date: date
     point_forecast: float
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
+    lower_bound: float | None = None
+    upper_bound: float | None = None
 
 
 class SeriesForecast(BaseModel):
     """Forecast for a single series."""
+
     series_id: str
     forecasts: list[ForecastPoint]
     model_used: str
-    metrics: Optional[dict] = None
+    metrics: dict | None = None
 
 
 class BatchForecastResponse(BaseModel):
     """Response for batch forecasting."""
+
     results: list[SeriesForecast]
     total_series: int
     successful: int
@@ -69,7 +74,7 @@ async def forecast_demand(
     import random
     import time
 
-    start_time = time.time()
+    time.time()
 
     logger.info(
         "Demand forecast request",
@@ -115,8 +120,8 @@ async def batch_forecast(
     current_user: Annotated[TokenData, Depends(get_current_user)],
 ):
     """Generate forecasts for multiple series in batch."""
-    import time
     import random
+    import time
 
     start_time = time.time()
 
@@ -151,11 +156,13 @@ async def batch_forecast(
 
                 forecasts.append(forecast_point)
 
-            results.append(SeriesForecast(
-                series_id=series_id,
-                forecasts=forecasts,
-                model_used="ensemble_v2",
-            ))
+            results.append(
+                SeriesForecast(
+                    series_id=series_id,
+                    forecasts=forecasts,
+                    model_used="ensemble_v2",
+                )
+            )
 
         except Exception as e:
             logger.error(f"Forecast failed for {series_id}: {e}")

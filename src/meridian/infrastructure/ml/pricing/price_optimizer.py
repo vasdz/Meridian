@@ -10,23 +10,21 @@ This module provides production-ready pricing capabilities:
 Designed for hyperscale retail pricing operations.
 """
 
-import numpy as np
-import pandas as pd
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Optional, Literal, Callable
-from scipy import optimize
-from scipy import stats
+from dataclasses import dataclass
 from enum import Enum
 
-from meridian.core.logging import get_logger
+import numpy as np
+import pandas as pd
+from scipy import optimize, stats
 
+from meridian.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class OptimizationObjective(Enum):
     """Pricing optimization objective."""
+
     PROFIT = "profit"
     REVENUE = "revenue"
     VOLUME = "volume"
@@ -35,6 +33,7 @@ class OptimizationObjective(Enum):
 
 class ElasticityModel(Enum):
     """Price elasticity estimation model."""
+
     OLS = "ols"
     BAYESIAN = "bayesian"
     LOG_LOG = "log_log"
@@ -45,12 +44,12 @@ class ElasticityModel(Enum):
 class PriceConstraints:
     """Constraints for price optimization."""
 
-    min_price: Optional[float] = None
-    max_price: Optional[float] = None
-    min_margin: Optional[float] = None  # Minimum margin percentage
-    max_price_change: Optional[float] = None  # Max % change from current
-    competitor_price: Optional[float] = None  # Reference competitor price
-    competitor_distance: Optional[float] = None  # Max distance from competitor
+    min_price: float | None = None
+    max_price: float | None = None
+    min_margin: float | None = None  # Minimum margin percentage
+    max_price_change: float | None = None  # Max % change from current
+    competitor_price: float | None = None  # Reference competitor price
+    competitor_distance: float | None = None  # Max distance from competitor
 
     def validate(self, price: float, current_price: float, cost: float) -> tuple[bool, list[str]]:
         """Validate price against constraints."""
@@ -70,7 +69,9 @@ class PriceConstraints:
         if self.max_price_change is not None:
             change = abs(price - current_price) / current_price
             if change > self.max_price_change:
-                violations.append(f"Price change {change:.1%} exceeds maximum {self.max_price_change:.1%}")
+                violations.append(
+                    f"Price change {change:.1%} exceeds maximum {self.max_price_change:.1%}"
+                )
 
         if self.competitor_price is not None and self.competitor_distance is not None:
             distance = abs(price - self.competitor_price) / self.competitor_price
@@ -92,7 +93,7 @@ class ElasticityResult:
     p_value: float
 
     # Bayesian results (if applicable)
-    elasticity_samples: Optional[np.ndarray] = None
+    elasticity_samples: np.ndarray | None = None
 
     def is_elastic(self) -> bool:
         """Check if demand is elastic (|e| > 1)."""
@@ -180,7 +181,7 @@ class PriceElasticityEstimator:
         prices: np.ndarray,
         quantities: np.ndarray,
         product_id: str = "default",
-        controls: Optional[np.ndarray] = None,
+        controls: np.ndarray | None = None,
     ) -> ElasticityResult:
         """
         Estimate price elasticity from historical data.
@@ -226,7 +227,7 @@ class PriceElasticityEstimator:
         prices: np.ndarray,
         quantities: np.ndarray,
         product_id: str,
-        controls: Optional[np.ndarray],
+        controls: np.ndarray | None,
     ) -> ElasticityResult:
         """Log-log model: ln(Q) = a + e*ln(P) + controls."""
         from sklearn.linear_model import LinearRegression
@@ -250,7 +251,7 @@ class PriceElasticityEstimator:
         n = len(log_quantities)
         k = X.shape[1]
 
-        mse = np.sum(residuals ** 2) / (n - k - 1)
+        mse = np.sum(residuals**2) / (n - k - 1)
         X_with_const = np.hstack([np.ones((n, 1)), X])
         var_covar = mse * np.linalg.inv(X_with_const.T @ X_with_const)
         se = np.sqrt(np.diag(var_covar))
@@ -261,7 +262,7 @@ class PriceElasticityEstimator:
         ci = (elasticity - t_crit * elasticity_std, elasticity + t_crit * elasticity_std)
 
         # R-squared
-        ss_res = np.sum(residuals ** 2)
+        ss_res = np.sum(residuals**2)
         ss_tot = np.sum((log_quantities - np.mean(log_quantities)) ** 2)
         r_squared = 1 - ss_res / ss_tot
 
@@ -283,7 +284,7 @@ class PriceElasticityEstimator:
         prices: np.ndarray,
         quantities: np.ndarray,
         product_id: str,
-        controls: Optional[np.ndarray],
+        controls: np.ndarray | None,
     ) -> ElasticityResult:
         """Semi-log model: Q = a + b*ln(P)."""
         from sklearn.linear_model import LinearRegression
@@ -291,7 +292,7 @@ class PriceElasticityEstimator:
         log_prices = np.log(prices).reshape(-1, 1)
 
         if controls is not None:
-            X = np.hstack([log_prices, controls[:len(prices)]])
+            X = np.hstack([log_prices, controls[: len(prices)]])
         else:
             X = log_prices
 
@@ -308,14 +309,14 @@ class PriceElasticityEstimator:
         y_pred = model.predict(X)
         residuals = quantities - y_pred
         n = len(quantities)
-        mse = np.sum(residuals ** 2) / (n - 2)
+        mse = np.sum(residuals**2) / (n - 2)
         se_b = np.sqrt(mse / np.sum((log_prices.flatten() - np.mean(log_prices)) ** 2))
         elasticity_std = se_b / mean_q
 
         t_crit = stats.t.ppf((1 + self.confidence_level) / 2, n - 2)
         ci = (elasticity - t_crit * elasticity_std, elasticity + t_crit * elasticity_std)
 
-        ss_res = np.sum(residuals ** 2)
+        ss_res = np.sum(residuals**2)
         ss_tot = np.sum((quantities - mean_q) ** 2)
         r_squared = 1 - ss_res / ss_tot
 
@@ -336,14 +337,14 @@ class PriceElasticityEstimator:
         prices: np.ndarray,
         quantities: np.ndarray,
         product_id: str,
-        controls: Optional[np.ndarray],
+        controls: np.ndarray | None,
     ) -> ElasticityResult:
         """Simple OLS: Q = a + b*P (elasticity at mean)."""
         from sklearn.linear_model import LinearRegression
 
         X = prices.reshape(-1, 1)
         if controls is not None:
-            X = np.hstack([X, controls[:len(prices)]])
+            X = np.hstack([X, controls[: len(prices)]])
 
         model = LinearRegression()
         model.fit(X, quantities)
@@ -359,14 +360,14 @@ class PriceElasticityEstimator:
         y_pred = model.predict(X)
         residuals = quantities - y_pred
         n = len(quantities)
-        mse = np.sum(residuals ** 2) / (n - 2)
+        mse = np.sum(residuals**2) / (n - 2)
         se_b = np.sqrt(mse / np.sum((prices - mean_p) ** 2))
         elasticity_std = se_b * mean_p / mean_q
 
         t_crit = stats.t.ppf((1 + self.confidence_level) / 2, n - 2)
         ci = (elasticity - t_crit * elasticity_std, elasticity + t_crit * elasticity_std)
 
-        ss_res = np.sum(residuals ** 2)
+        ss_res = np.sum(residuals**2)
         ss_tot = np.sum((quantities - mean_q) ** 2)
         r_squared = 1 - ss_res / ss_tot
 
@@ -387,7 +388,7 @@ class PriceElasticityEstimator:
         prices: np.ndarray,
         quantities: np.ndarray,
         product_id: str,
-        controls: Optional[np.ndarray],
+        controls: np.ndarray | None,
     ) -> ElasticityResult:
         """Bayesian estimation with MCMC (simplified)."""
         # Simplified Bayesian: use bootstrap for posterior approximation
@@ -411,7 +412,10 @@ class PriceElasticityEstimator:
             product_id=product_id,
             elasticity=np.mean(elasticities),
             elasticity_std=np.std(elasticities),
-            confidence_interval=(np.percentile(elasticities, 2.5), np.percentile(elasticities, 97.5)),
+            confidence_interval=(
+                np.percentile(elasticities, 2.5),
+                np.percentile(elasticities, 97.5),
+            ),
             r_squared=0.0,  # Not applicable
             p_value=0.0,  # Not applicable
             elasticity_samples=elasticities,
@@ -432,7 +436,7 @@ class PriceOptimizer:
     def __init__(
         self,
         objective: OptimizationObjective = OptimizationObjective.PROFIT,
-        elasticity_estimator: Optional[PriceElasticityEstimator] = None,
+        elasticity_estimator: PriceElasticityEstimator | None = None,
     ):
         self.objective = objective
         self.elasticity_estimator = elasticity_estimator or PriceElasticityEstimator()
@@ -450,7 +454,7 @@ class PriceOptimizer:
             product_id=product_id,
             elasticity=elasticity,
             elasticity_std=elasticity_std,
-            confidence_interval=(elasticity - 2*elasticity_std, elasticity + 2*elasticity_std),
+            confidence_interval=(elasticity - 2 * elasticity_std, elasticity + 2 * elasticity_std),
             r_squared=1.0,
             p_value=0.0,
         )
@@ -460,7 +464,7 @@ class PriceOptimizer:
         product_id: str,
         prices: np.ndarray,
         quantities: np.ndarray,
-        controls: Optional[np.ndarray] = None,
+        controls: np.ndarray | None = None,
     ) -> ElasticityResult:
         """Estimate and store elasticity for a product."""
         result = self.elasticity_estimator.estimate(prices, quantities, product_id, controls)
@@ -473,7 +477,7 @@ class PriceOptimizer:
         current_price: float,
         current_demand: float,
         cost: float,
-        constraints: Optional[PriceConstraints] = None,
+        constraints: PriceConstraints | None = None,
     ) -> OptimizationResult:
         """
         Find optimal price for a product.
@@ -489,7 +493,9 @@ class PriceOptimizer:
             OptimizationResult with optimal price and predictions
         """
         if product_id not in self._elasticities:
-            raise ValueError(f"No elasticity for product {product_id}. Call estimate_elasticity first.")
+            raise ValueError(
+                f"No elasticity for product {product_id}. Call estimate_elasticity first."
+            )
 
         elasticity = self._elasticities[product_id].elasticity
 
@@ -509,17 +515,24 @@ class PriceOptimizer:
 
         # Define objective function
         if self.objective == OptimizationObjective.PROFIT:
+
             def objective(price: float) -> float:
                 q = demand_function(price)
                 return -(price - cost) * q  # Negative for minimization
+
         elif self.objective == OptimizationObjective.REVENUE:
+
             def objective(price: float) -> float:
                 q = demand_function(price)
                 return -price * q
+
         elif self.objective == OptimizationObjective.VOLUME:
+
             def objective(price: float) -> float:
                 return -demand_function(price)
+
         else:  # MARGIN
+
             def objective(price: float) -> float:
                 return -(price - cost) / price
 
@@ -571,7 +584,9 @@ class PriceOptimizer:
             revenue_change=(predicted_revenue - current_revenue) / current_revenue,
             current_profit=current_profit,
             predicted_profit=predicted_profit,
-            profit_change=(predicted_profit - current_profit) / current_profit if current_profit > 0 else 0,
+            profit_change=(
+                (predicted_profit - current_profit) / current_profit if current_profit > 0 else 0
+            ),
             objective=self.objective,
             constraints_satisfied=is_valid,
             elasticity_used=elasticity,
@@ -580,7 +595,7 @@ class PriceOptimizer:
     def optimize_portfolio(
         self,
         products: list[dict],
-        total_revenue_constraint: Optional[float] = None,
+        total_revenue_constraint: float | None = None,
     ) -> list[OptimizationResult]:
         """
         Optimize prices for a portfolio of products.
@@ -651,15 +666,17 @@ class PriceOptimizer:
             profit = (price - cost) * demand
             margin = (price - cost) / price
 
-            results.append({
-                "price": price,
-                "price_change_pct": (price - current_price) / current_price * 100,
-                "demand": demand,
-                "demand_change_pct": (demand - current_demand) / current_demand * 100,
-                "revenue": revenue,
-                "profit": profit,
-                "margin_pct": margin * 100,
-            })
+            results.append(
+                {
+                    "price": price,
+                    "price_change_pct": (price - current_price) / current_price * 100,
+                    "demand": demand,
+                    "demand_change_pct": (demand - current_demand) / current_demand * 100,
+                    "revenue": revenue,
+                    "profit": profit,
+                    "margin_pct": margin * 100,
+                }
+            )
 
         return pd.DataFrame(results)
 
@@ -676,11 +693,13 @@ class DynamicPricingEngine:
         self,
         objective: OptimizationObjective = OptimizationObjective.PROFIT,
         elasticity_model: ElasticityModel = ElasticityModel.LOG_LOG,
-        default_constraints: Optional[PriceConstraints] = None,
+        default_constraints: PriceConstraints | None = None,
     ):
         self.objective = objective
         self.elasticity_estimator = PriceElasticityEstimator(model=elasticity_model)
-        self.optimizer = PriceOptimizer(objective=objective, elasticity_estimator=self.elasticity_estimator)
+        self.optimizer = PriceOptimizer(
+            objective=objective, elasticity_estimator=self.elasticity_estimator
+        )
         self.default_constraints = default_constraints or PriceConstraints(
             min_margin=0.05,
             max_price_change=0.20,
@@ -693,7 +712,7 @@ class DynamicPricingEngine:
         product_id: str,
         prices: np.ndarray,
         quantities: np.ndarray,
-        controls: Optional[np.ndarray] = None,
+        controls: np.ndarray | None = None,
     ) -> ElasticityResult:
         """Update elasticity estimate for a product."""
         return self.optimizer.estimate_elasticity(product_id, prices, quantities, controls)
@@ -704,7 +723,7 @@ class DynamicPricingEngine:
         current_price: float,
         current_demand: float,
         cost: float,
-        constraints: Optional[PriceConstraints] = None,
+        constraints: PriceConstraints | None = None,
     ) -> OptimizationResult:
         """Get recommended price for a product."""
         constraints = constraints or self.default_constraints
@@ -746,7 +765,7 @@ class DynamicPricingEngine:
                 prices = product_data[price_col].values
                 quantities = product_data[quantity_col].values
 
-                elasticity_result = self.update_elasticity(product_id, prices, quantities)
+                self.update_elasticity(product_id, prices, quantities)
 
                 # Get current values
                 current = product_data.sort_values(date_col).iloc[-1]
@@ -808,7 +827,10 @@ class DynamicPricingEngine:
             "predicted_revenue": predicted_revenue,
             "revenue_change_pct": (predicted_revenue - current_revenue) / current_revenue * 100,
             "predicted_profit": predicted_profit,
-            "profit_change_pct": (predicted_profit - current_profit) / current_profit * 100 if current_profit > 0 else 0,
+            "profit_change_pct": (
+                (predicted_profit - current_profit) / current_profit * 100
+                if current_profit > 0
+                else 0
+            ),
             "elasticity_used": elasticity,
         }
-

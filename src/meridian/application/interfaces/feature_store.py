@@ -1,7 +1,6 @@
 """Feature store interface."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class FeatureStoreInterface(ABC):
@@ -37,4 +36,3 @@ class FeatureStoreInterface(ABC):
     ) -> None:
         """Materialize features to online store."""
         pass
-

@@ -1,15 +1,13 @@
 """Audit logging middleware."""
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from meridian.core.logging import get_logger, get_correlation_id
-from meridian.infrastructure.security.audit_logger import AuditLogger
-
+from meridian.core.logging import get_correlation_id, get_logger
 
 logger = get_logger(__name__)
 
@@ -57,4 +55,3 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         # await AuditLogger.log_request(audit_data)
 
         return response
-

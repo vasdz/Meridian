@@ -4,11 +4,10 @@ import numpy as np
 import pytest
 
 from meridian.domain.services.ab_testing import (
-    PowerAnalyzer,
     ABTestAnalyzer,
-    design_experiment,
-    HypothesisType,
     CorrectionMethod,
+    PowerAnalyzer,
+    design_experiment,
 )
 
 
@@ -159,10 +158,7 @@ class TestABTestAnalyzer:
         )
 
         # Create multiple test results
-        results = [
-            analyzer.analyze_binary(500, 10000, 540 + i*10, 10000)
-            for i in range(5)
-        ]
+        results = [analyzer.analyze_binary(500, 10000, 540 + i * 10, 10000) for i in range(5)]
 
         corrected = analyzer.apply_correction(results)
 
@@ -224,4 +220,3 @@ class TestExperimentDesign:
         )
 
         assert design.expected_days < design_slow.expected_days
-

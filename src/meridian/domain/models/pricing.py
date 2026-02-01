@@ -1,7 +1,6 @@
 """Pricing domain model."""
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -10,25 +9,25 @@ class PricePoint:
 
     product_id: str
     current_price: float
-    recommended_price: Optional[float] = None
-    cost: Optional[float] = None
+    recommended_price: float | None = None
+    cost: float | None = None
 
     # Elasticity
     price_elasticity: float = -1.5
 
     # Constraints
-    min_price: Optional[float] = None
-    max_price: Optional[float] = None
+    min_price: float | None = None
+    max_price: float | None = None
 
     @property
-    def margin(self) -> Optional[float]:
+    def margin(self) -> float | None:
         """Calculate margin."""
         if self.cost is None:
             return None
         return (self.current_price - self.cost) / self.current_price
 
     @property
-    def recommended_margin(self) -> Optional[float]:
+    def recommended_margin(self) -> float | None:
         """Calculate recommended margin."""
         if self.cost is None or self.recommended_price is None:
             return None
@@ -60,4 +59,3 @@ class PriceOptimizationResult:
     # Expected impact
     expected_revenue_change: float = 0.0
     expected_profit_change: float = 0.0
-

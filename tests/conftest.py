@@ -1,15 +1,14 @@
 """Pytest configuration and fixtures."""
 
 import asyncio
+from collections.abc import AsyncGenerator, Generator
+
 import pytest
-from typing import AsyncGenerator, Generator
-
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from meridian.main import app
 from meridian.infrastructure.database.models.base import Base
-
+from meridian.main import app
 
 # Test database URL (SQLite for testing)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -60,6 +59,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create test HTTP client."""
     from httpx import ASGITransport
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
@@ -103,7 +103,7 @@ def auth_headers() -> dict:
     Uses dynamically generated test API key to avoid secret detection.
     """
     import secrets
+
     # Generate a unique test key for each test run
     test_key = f"mk_test_{secrets.token_hex(16)}"
     return {"X-API-Key": test_key}
-

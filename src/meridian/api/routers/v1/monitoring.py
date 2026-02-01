@@ -1,14 +1,13 @@
 """ML Monitoring endpoints - Production observability API."""
 
-from typing import Annotated, Optional
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
-from meridian.api.dependencies.auth import get_current_user, TokenData
+from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -16,11 +15,13 @@ router = APIRouter()
 
 # Monitoring schemas
 
+
 class ModelHealthStatus(BaseModel):
     """Health status of a model."""
+
     model_id: str
     status: str  # healthy, degraded, critical
-    last_prediction_time: Optional[datetime] = None
+    last_prediction_time: datetime | None = None
     prediction_count_24h: int
     error_rate_24h: float
     avg_latency_ms: float
@@ -30,6 +31,7 @@ class ModelHealthStatus(BaseModel):
 
 class DriftStatus(BaseModel):
     """Drift detection status."""
+
     feature_name: str
     drift_score: float
     threshold: float
@@ -40,6 +42,7 @@ class DriftStatus(BaseModel):
 
 class ModelDriftReport(BaseModel):
     """Complete drift report for a model."""
+
     model_id: str
     check_timestamp: datetime
     overall_drift_detected: bool
@@ -50,6 +53,7 @@ class ModelDriftReport(BaseModel):
 
 class AlertInfo(BaseModel):
     """Alert information."""
+
     alert_id: str
     timestamp: datetime
     severity: str
@@ -57,12 +61,13 @@ class AlertInfo(BaseModel):
     metric_value: float
     threshold: float
     message: str
-    model_id: Optional[str] = None
+    model_id: str | None = None
     acknowledged: bool
 
 
 class AlertSummary(BaseModel):
     """Summary of alerts."""
+
     total_alerts: int
     active_alerts: int
     by_severity: dict[str, int]
@@ -70,6 +75,7 @@ class AlertSummary(BaseModel):
 
 class SLAReport(BaseModel):
     """SLA compliance report."""
+
     model_id: str
     period_start: datetime
     period_end: datetime
@@ -86,6 +92,7 @@ class SLAReport(BaseModel):
 
 class MetricsSnapshot(BaseModel):
     """Current metrics snapshot."""
+
     model_id: str
     timestamp: datetime
     prediction_count: int
@@ -158,17 +165,21 @@ async def get_all_models_health(
         if error_rate > 0.01:
             status = "degraded"
 
-        health_statuses.append({
-            "model_id": model_id,
-            "status": status,
-            "error_rate_24h": round(error_rate, 4),
-            "avg_latency_ms": round(avg_latency, 2),
-            "sla_compliance": error_rate < 0.01,
-        })
+        health_statuses.append(
+            {
+                "model_id": model_id,
+                "status": status,
+                "error_rate_24h": round(error_rate, 4),
+                "avg_latency_ms": round(avg_latency, 2),
+                "sla_compliance": error_rate < 0.01,
+            }
+        )
 
     return {
         "models": health_statuses,
-        "overall_status": "healthy" if all(m["status"] == "healthy" for m in health_statuses) else "degraded",
+        "overall_status": (
+            "healthy" if all(m["status"] == "healthy" for m in health_statuses) else "degraded"
+        ),
         "timestamp": datetime.now(),
     }
 
@@ -188,7 +199,13 @@ async def check_drift(
     logger.info("Drift check", model_id=model_id)
 
     # Simulated drift detection
-    features = ["age", "income", "purchase_frequency", "days_since_last_purchase", "avg_basket_size"]
+    features = [
+        "age",
+        "income",
+        "purchase_frequency",
+        "days_since_last_purchase",
+        "avg_basket_size",
+    ]
 
     feature_drift = []
     drifted_count = 0
@@ -201,14 +218,16 @@ async def check_drift(
         if is_drifted:
             drifted_count += 1
 
-        feature_drift.append(DriftStatus(
-            feature_name=feature,
-            drift_score=round(drift_score, 4),
-            threshold=threshold,
-            is_drifted=is_drifted,
-            drift_type="psi",
-            last_checked=datetime.now(),
-        ))
+        feature_drift.append(
+            DriftStatus(
+                feature_name=feature,
+                drift_score=round(drift_score, 4),
+                threshold=threshold,
+                is_drifted=is_drifted,
+                drift_type="psi",
+                last_checked=datetime.now(),
+            )
+        )
 
     return ModelDriftReport(
         model_id=model_id,
@@ -223,9 +242,9 @@ async def check_drift(
 @router.get("/alerts", response_model=list[AlertInfo])
 async def get_alerts(
     current_user: Annotated[TokenData, Depends(get_current_user)],
-    severity: Optional[str] = Query(None, description="Filter by severity"),
-    model_id: Optional[str] = Query(None, description="Filter by model"),
-    acknowledged: Optional[bool] = Query(None, description="Filter by acknowledgment status"),
+    severity: str | None = Query(None, description="Filter by severity"),
+    model_id: str | None = Query(None, description="Filter by model"),
+    acknowledged: bool | None = Query(None, description="Filter by acknowledgment status"),
     limit: int = Query(50, ge=1, le=200),
 ):
     """
@@ -374,12 +393,14 @@ async def get_metrics_history(
 
     for i in range(hours):
         timestamp = now - timedelta(hours=hours - i)
-        history.append({
-            "timestamp": timestamp.isoformat(),
-            "prediction_count": random.randint(100, 500),
-            "mean_latency_ms": round(random.uniform(20, 60), 2),
-            "error_rate": round(random.uniform(0.001, 0.01), 4),
-        })
+        history.append(
+            {
+                "timestamp": timestamp.isoformat(),
+                "prediction_count": random.randint(100, 500),
+                "mean_latency_ms": round(random.uniform(20, 60), 2),
+                "error_rate": round(random.uniform(0.001, 0.01), 4),
+            }
+        )
 
     return {
         "model_id": model_id,
@@ -412,16 +433,17 @@ async def record_prediction(
     if model_id not in _model_metrics:
         _model_metrics[model_id] = []
 
-    _model_metrics[model_id].append({
-        "timestamp": datetime.now().isoformat(),
-        "prediction": prediction,
-        "latency_ms": latency_ms,
-        "is_error": is_error,
-    })
+    _model_metrics[model_id].append(
+        {
+            "timestamp": datetime.now().isoformat(),
+            "prediction": prediction,
+            "latency_ms": latency_ms,
+            "is_error": is_error,
+        }
+    )
 
     # Keep only last 10000 records per model
     if len(_model_metrics[model_id]) > 10000:
         _model_metrics[model_id] = _model_metrics[model_id][-10000:]
 
     return {"status": "recorded", "model_id": model_id}
-

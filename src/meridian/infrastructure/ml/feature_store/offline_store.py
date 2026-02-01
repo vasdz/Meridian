@@ -1,9 +1,6 @@
 """Offline feature store using Spark."""
 
-from typing import Optional
-
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -43,4 +40,3 @@ class OfflineStore:
 
         # Would read from parquet/delta files
         pass
-

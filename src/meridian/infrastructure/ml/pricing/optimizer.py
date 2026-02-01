@@ -1,9 +1,6 @@
 """Price optimization using mathematical programming."""
 
-from typing import Optional
-
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -24,7 +21,7 @@ class PriceOptimizer:
         products: list[dict],
         elasticities: list[float],
         objective: str = "maximize_profit",
-        constraints: Optional[dict] = None,
+        constraints: dict | None = None,
     ) -> dict:
         """
         Optimize prices for products.
@@ -50,7 +47,7 @@ class PriceOptimizer:
 
         recommendations = []
 
-        for product, elasticity in zip(products, elasticities):
+        for product, elasticity in zip(products, elasticities, strict=False):
             current_price = product["current_price"]
             cost = product.get("cost", current_price * 0.6)
 
@@ -74,16 +71,17 @@ class PriceOptimizer:
             min_allowed = cost / (1 - min_margin)
             optimal = max(optimal, min_allowed)
 
-            recommendations.append({
-                "product_id": product.get("product_id"),
-                "current_price": current_price,
-                "recommended_price": optimal,
-                "elasticity": elasticity,
-            })
+            recommendations.append(
+                {
+                    "product_id": product.get("product_id"),
+                    "current_price": current_price,
+                    "recommended_price": optimal,
+                    "elasticity": elasticity,
+                }
+            )
 
         return {
             "status": "optimal",
             "recommendations": recommendations,
             "objective": objective,
         }
-

@@ -1,2 +1,1 @@
 """Fuzz testing package."""
-

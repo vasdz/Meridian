@@ -1,8 +1,7 @@
 """Feature computation tasks."""
 
-from meridian.workers.celery_app import celery_app
 from meridian.core.logging import get_logger
-
+from meridian.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
 
@@ -39,4 +38,3 @@ def materialize_features(feature_view: str):
     # Would call feature store materialization
 
     return {"status": "success", "feature_view": feature_view}
-

@@ -1,20 +1,19 @@
 """Forecasting response schemas."""
 
 from datetime import date
-from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class DemandForecast(BaseModel):
     """Single demand forecast."""
 
     item_id: str
-    store_id: Optional[str] = None
+    store_id: str | None = None
     date: date
     point_forecast: float
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
+    lower_bound: float | None = None
+    upper_bound: float | None = None
 
 
 class DemandForecastResponse(BaseModel):
@@ -23,4 +22,3 @@ class DemandForecastResponse(BaseModel):
     forecasts: list[DemandForecast]
     model_id: str
     horizon_days: int
-

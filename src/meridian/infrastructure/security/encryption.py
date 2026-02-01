@@ -2,12 +2,10 @@
 
 import base64
 import os
-from typing import Optional
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -15,7 +13,7 @@ logger = get_logger(__name__)
 class FieldEncryptor:
     """AES-256-GCM encryption for sensitive fields."""
 
-    def __init__(self, key: Optional[bytes] = None):
+    def __init__(self, key: bytes | None = None):
         """
         Initialize with encryption key.
 
@@ -69,7 +67,7 @@ class FieldEncryptor:
 
 
 # Singleton for common use
-_default_encryptor: Optional[FieldEncryptor] = None
+_default_encryptor: FieldEncryptor | None = None
 
 
 def get_field_encryptor() -> FieldEncryptor:
@@ -78,10 +76,11 @@ def get_field_encryptor() -> FieldEncryptor:
 
     if _default_encryptor is None:
         # In production, load key from Vault
-        from meridian.core.config import settings
-
         # Derive key from secret
         import hashlib
+
+        from meridian.core.config import settings
+
         key = hashlib.sha256(settings.secret_key.encode()).digest()
 
         _default_encryptor = FieldEncryptor(key)
@@ -97,4 +96,3 @@ def encrypt_pii(value: str) -> str:
 def decrypt_pii(encrypted: str) -> str:
     """Decrypt PII field."""
     return get_field_encryptor().decrypt(encrypted)
-

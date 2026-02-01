@@ -4,12 +4,11 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from meridian.infrastructure.ml.model_registry import ModelRegistry
-from meridian.infrastructure.cache.redis_cache import RedisCache
-from meridian.domain.services.uplift_calculator import UpliftCalculator
 from meridian.domain.services.experiment_design import ExperimentDesignService
 from meridian.domain.services.pricing_optimizer import PricingOptimizer
-
+from meridian.domain.services.uplift_calculator import UpliftCalculator
+from meridian.infrastructure.cache.redis_cache import RedisCache
+from meridian.infrastructure.ml.model_registry import ModelRegistry
 
 # Singleton instances
 _model_registry = None
@@ -65,4 +64,3 @@ CacheDep = Annotated[RedisCache, Depends(get_cache)]
 UpliftCalculatorDep = Annotated[UpliftCalculator, Depends(get_uplift_calculator)]
 ExperimentDesignDep = Annotated[ExperimentDesignService, Depends(get_experiment_design_service)]
 PricingOptimizerDep = Annotated[PricingOptimizer, Depends(get_pricing_optimizer)]
-

@@ -1,14 +1,12 @@
 """Meta-learner base class for uplift models."""
 
 from abc import abstractmethod
-from typing import Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator
 
-from meridian.infrastructure.ml.base import BaseMLModel
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.base import BaseMLModel
 
 logger = get_logger(__name__)
 
@@ -31,20 +29,24 @@ class MetaLearner(BaseMLModel):
         if self.base_learner == "lightgbm":
             try:
                 from lightgbm import LGBMRegressor
+
                 return LGBMRegressor(**self.kwargs)
             except ImportError:
                 pass
 
         if self.base_learner == "gradient_boosting":
             from sklearn.ensemble import GradientBoostingRegressor
+
             return GradientBoostingRegressor(**self.kwargs)
 
         if self.base_learner == "random_forest":
             from sklearn.ensemble import RandomForestRegressor
+
             return RandomForestRegressor(**self.kwargs)
 
         # Default to simple regressor
         from sklearn.linear_model import Ridge
+
         return Ridge(**self.kwargs)
 
     @abstractmethod
@@ -65,4 +67,3 @@ class MetaLearner(BaseMLModel):
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Alias for predict_cate."""
         return self.predict_cate(X)
-

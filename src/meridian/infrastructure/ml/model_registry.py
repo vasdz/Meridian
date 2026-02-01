@@ -1,10 +1,7 @@
 """MLflow model registry integration."""
 
-from typing import Optional
-
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -12,7 +9,7 @@ logger = get_logger(__name__)
 class ModelRegistry:
     """MLflow model registry adapter."""
 
-    def __init__(self, tracking_uri: Optional[str] = None):
+    def __init__(self, tracking_uri: str | None = None):
         self.tracking_uri = tracking_uri or settings.mlflow_tracking_uri
         self._client = None
 
@@ -21,6 +18,7 @@ class ModelRegistry:
         if self._client is None:
             try:
                 import mlflow
+
                 mlflow.set_tracking_uri(self.tracking_uri)
                 self._client = mlflow.MlflowClient()
             except ImportError:
@@ -64,7 +62,7 @@ class ModelRegistry:
     def load_model(
         self,
         model_name: str,
-        version: Optional[str] = None,
+        version: str | None = None,
         stage: str = "Production",
     ):
         """Load model from registry."""
@@ -93,7 +91,7 @@ class ModelRegistry:
         self,
         model_name: str,
         stage: str = "Production",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get latest model version for a stage."""
         client = self._get_client()
         if client is None:
@@ -135,4 +133,3 @@ class ModelRegistry:
         except Exception as e:
             logger.error("Failed to transition model", error=str(e))
             return False
-

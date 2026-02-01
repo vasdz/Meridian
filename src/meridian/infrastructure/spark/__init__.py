@@ -1,2 +1,1 @@
 """Spark infrastructure package."""
-

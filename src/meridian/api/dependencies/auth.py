@@ -1,16 +1,14 @@
 """Authentication dependencies - JWT and API Key validation."""
 
 from datetime import datetime, timedelta
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from meridian.core.config import settings
-from meridian.core.security import hash_api_key, constant_time_compare
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -29,7 +27,7 @@ class TokenData:
 
 def create_access_token(
     data: dict,
-    expires_delta: Optional[timedelta] = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
@@ -69,7 +67,7 @@ def decode_access_token(token: str) -> TokenData:
         )
 
 
-async def validate_api_key(api_key: str) -> Optional[TokenData]:
+async def validate_api_key(api_key: str) -> TokenData | None:
     """Validate API key against stored keys."""
     # In production, look up hashed key in database
     # For demo, accept keys with prefix "mk_"
@@ -79,8 +77,8 @@ async def validate_api_key(api_key: str) -> Optional[TokenData]:
 
 
 async def get_current_user(
-    bearer: Annotated[Optional[HTTPAuthorizationCredentials], Depends(bearer_scheme)] = None,
-    api_key: Annotated[Optional[str], Security(api_key_header)] = None,
+    bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
+    api_key: Annotated[str | None, Security(api_key_header)] = None,
 ) -> TokenData:
     """Get current authenticated user from JWT or API key."""
     # Try JWT first
@@ -101,9 +99,9 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    bearer: Annotated[Optional[HTTPAuthorizationCredentials], Depends(bearer_scheme)] = None,
-    api_key: Annotated[Optional[str], Security(api_key_header)] = None,
-) -> Optional[TokenData]:
+    bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
+    api_key: Annotated[str | None, Security(api_key_header)] = None,
+) -> TokenData | None:
     """Get current user if authenticated, None otherwise."""
     try:
         return await get_current_user(bearer, api_key)
@@ -113,8 +111,9 @@ async def get_current_user_optional(
 
 def require_scopes(required_scopes: list[str]):
     """Dependency to require specific scopes."""
+
     async def check_scopes(
-        current_user: Annotated[TokenData, Depends(get_current_user)]
+        current_user: Annotated[TokenData, Depends(get_current_user)],
     ) -> TokenData:
         for scope in required_scopes:
             if scope not in current_user.scopes:
@@ -123,5 +122,5 @@ def require_scopes(required_scopes: list[str]):
                     detail=f"Missing required scope: {scope}",
                 )
         return current_user
-    return check_scopes
 
+    return check_scopes

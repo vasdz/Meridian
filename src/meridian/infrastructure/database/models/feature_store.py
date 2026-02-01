@@ -1,9 +1,8 @@
 """Feature store ORM model."""
 
-from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import String, DateTime, JSON
+from sqlalchemy import JSON, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from meridian.infrastructure.database.models.base import Base
@@ -19,16 +18,15 @@ class FeatureRegistryModel(Base):
 
     # Feature definition
     data_type: Mapped[str] = mapped_column(String(32))
-    description: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Source
-    source_table: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    transform_sql: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
+    source_table: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    transform_sql: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     # Metadata
-    tags: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.utcnow)
-

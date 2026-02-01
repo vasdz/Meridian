@@ -1,7 +1,5 @@
 """Uplift prediction request schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -28,6 +26,7 @@ class UpliftPredictionRequest(BaseModel):
     def validate_customer_ids(cls, v):
         """Validate customer ID format."""
         import re
+
         for cid in v:
             if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", cid):
                 raise ValueError(f"Invalid customer ID format: {cid}")
@@ -53,4 +52,3 @@ class UpliftBatchPredictionRequest(BaseModel):
         le=10000,
         description="Batch size for processing",
     )
-

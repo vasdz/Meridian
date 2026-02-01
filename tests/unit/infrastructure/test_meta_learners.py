@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from meridian.infrastructure.ml.uplift import TLearner, SLearner
+from meridian.infrastructure.ml.uplift import SLearner, TLearner
 
 
 class TestTLearner:
@@ -59,10 +59,7 @@ class TestTLearner:
         assert "y0" in outcomes
         assert "y1" in outcomes
         assert "cate" in outcomes
-        np.testing.assert_array_almost_equal(
-            outcomes["cate"],
-            outcomes["y1"] - outcomes["y0"]
-        )
+        np.testing.assert_array_almost_equal(outcomes["cate"], outcomes["y1"] - outcomes["y0"])
 
     def test_positive_treatment_effect(self, sample_data):
         """Test that model detects positive treatment effect."""
@@ -151,4 +148,3 @@ class TestSLearner:
             assert "treatment" in importance
             assert "features" in importance
             assert len(importance["features"]) == X.shape[1]
-

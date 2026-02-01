@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from meridian.core.constants import CustomerSegment
 
@@ -12,13 +11,13 @@ class Customer:
     """Customer aggregate root."""
 
     id: str
-    external_id: Optional[str] = None
+    external_id: str | None = None
     segment: CustomerSegment = CustomerSegment.NEW
-    region: Optional[str] = None
-    channel: Optional[str] = None
+    region: str | None = None
+    channel: str | None = None
 
     # Demographics
-    age: Optional[int] = None
+    age: int | None = None
 
     # Behavioral metrics
     tenure_days: int = 0
@@ -65,4 +64,3 @@ class Customer:
             "monetary": monetary_score,
             "total": recency_score + frequency_score + monetary_score,
         }
-

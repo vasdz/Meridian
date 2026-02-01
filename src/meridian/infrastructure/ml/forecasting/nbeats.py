@@ -1,12 +1,11 @@
 """N-BEATS forecasting model wrapper."""
 
-from typing import Optional, Any
+from typing import Any
 
 import numpy as np
 
-from meridian.infrastructure.ml.base import BaseMLModel
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.base import BaseMLModel
 
 logger = get_logger(__name__)
 
@@ -38,6 +37,7 @@ class NBEATS(BaseMLModel):
 
         # Mock predictions
         import random
+
         return np.array([random.uniform(80, 120) for _ in range(self.prediction_length)])
 
     def forecast(self, horizon: int, **kwargs) -> dict:
@@ -51,4 +51,3 @@ class NBEATS(BaseMLModel):
                 "0.9": (predictions * 1.2).tolist(),
             },
         }
-

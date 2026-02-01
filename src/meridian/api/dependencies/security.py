@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import HTTPException, Query, status
 
-
 # Patterns for detecting potentially malicious input
 SQL_INJECTION_PATTERNS = [
     r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)",
@@ -82,4 +81,3 @@ def validate_pagination(
 ) -> dict:
     """Validate pagination parameters."""
     return {"limit": limit, "offset": offset}
-

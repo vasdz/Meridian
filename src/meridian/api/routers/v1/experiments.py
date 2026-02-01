@@ -1,16 +1,14 @@
 """A/B experiment management endpoints."""
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from meridian.api.dependencies.auth import get_current_user, TokenData
+from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.api.schemas.requests.experiment import (
     CreateExperimentRequest,
-    UpdateExperimentRequest,
 )
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -19,7 +17,7 @@ router = APIRouter()
 @router.get("")
 async def list_experiments(
     current_user: Annotated[TokenData, Depends(get_current_user)],
-    status: Optional[str] = Query(None, pattern="^(draft|running|completed|archived)$"),
+    status: str | None = Query(None, pattern="^(draft|running|completed|archived)$"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
@@ -59,6 +57,7 @@ async def create_experiment(
     )
 
     import uuid
+
     return {
         "id": str(uuid.uuid4()),
         "name": request.name,
@@ -126,6 +125,7 @@ async def calculate_sample_size(
     """Calculate required sample size for an experiment."""
     # Simple approximation
     import math
+
     from scipy import stats
 
     z_alpha = stats.norm.ppf(0.975)
@@ -134,7 +134,7 @@ async def calculate_sample_size(
     p = baseline_rate
     effect = baseline_rate * mde
 
-    n = 2 * ((z_alpha + z_power) ** 2) * p * (1 - p) / (effect ** 2)
+    n = 2 * ((z_alpha + z_power) ** 2) * p * (1 - p) / (effect**2)
 
     return {
         "required_sample_size": int(math.ceil(n)),
@@ -143,4 +143,3 @@ async def calculate_sample_size(
         "mde": mde,
         "power": power,
     }
-

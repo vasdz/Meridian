@@ -5,10 +5,8 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, status
 
 from meridian.core.config import settings
-from meridian.core.exceptions import RateLimitExceededError
-from meridian.infrastructure.cache.redis_cache import RedisCache
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.cache.redis_cache import RedisCache
 
 logger = get_logger(__name__)
 
@@ -91,4 +89,3 @@ async def check_rate_limit(request: Request) -> None:
 
 # Dependency
 RateLimited = Annotated[None, Depends(check_rate_limit)]
-

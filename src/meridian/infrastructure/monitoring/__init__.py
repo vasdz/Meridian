@@ -1,17 +1,17 @@
 """ML Monitoring module."""
 
 from meridian.infrastructure.monitoring.ml_monitoring import (
+    Alert,
+    AlertManager,
+    AlertSeverity,
     DriftDetector,
     DriftResult,
     DriftType,
+    MetricType,
+    ModelMetrics,
+    ModelMonitoringService,
     PredictionMonitor,
     SLAMonitor,
-    AlertManager,
-    Alert,
-    AlertSeverity,
-    ModelMetrics,
-    MetricType,
-    ModelMonitoringService,
 )
 
 __all__ = [
@@ -27,4 +27,3 @@ __all__ = [
     "MetricType",
     "ModelMonitoringService",
 ]
-

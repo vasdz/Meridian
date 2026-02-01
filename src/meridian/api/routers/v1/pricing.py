@@ -1,16 +1,13 @@
 """Price optimization endpoints - Production-grade dynamic pricing API."""
 
-from typing import Annotated, Optional
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from meridian.api.dependencies.auth import get_current_user, TokenData
-from meridian.api.schemas.requests.pricing import PriceOptimizationRequest
-from meridian.api.schemas.responses.common import SuccessResponse
+from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -18,26 +15,30 @@ router = APIRouter()
 
 # Extended schemas for production pricing API
 
+
 class PriceConstraints(BaseModel):
     """Constraints for price optimization."""
-    min_price: Optional[float] = Field(None, ge=0)
-    max_price: Optional[float] = Field(None, ge=0)
-    min_margin: Optional[float] = Field(None, ge=0, le=1)
-    max_price_change: Optional[float] = Field(None, ge=0, le=1)
+
+    min_price: float | None = Field(None, ge=0)
+    max_price: float | None = Field(None, ge=0)
+    min_margin: float | None = Field(None, ge=0, le=1)
+    max_price_change: float | None = Field(None, ge=0, le=1)
 
 
 class ProductPricingInput(BaseModel):
     """Input for single product pricing."""
+
     product_id: str
     current_price: float = Field(..., gt=0)
     current_demand: float = Field(..., ge=0)
     cost: float = Field(..., ge=0)
-    elasticity: Optional[float] = Field(None, description="Override elasticity")
-    constraints: Optional[PriceConstraints] = None
+    elasticity: float | None = Field(None, description="Override elasticity")
+    constraints: PriceConstraints | None = None
 
 
 class ElasticityRequest(BaseModel):
     """Request for elasticity estimation."""
+
     product_id: str
     prices: list[float] = Field(..., min_length=10)
     quantities: list[float] = Field(..., min_length=10)
@@ -46,6 +47,7 @@ class ElasticityRequest(BaseModel):
 
 class ElasticityResponse(BaseModel):
     """Response for elasticity estimation."""
+
     product_id: str
     elasticity: float
     elasticity_std: float
@@ -58,6 +60,7 @@ class ElasticityResponse(BaseModel):
 
 class OptimizationResult(BaseModel):
     """Result for single product optimization."""
+
     product_id: str
     current_price: float
     optimal_price: float
@@ -74,13 +77,15 @@ class OptimizationResult(BaseModel):
 
 class BatchOptimizationRequest(BaseModel):
     """Request for batch price optimization."""
+
     products: list[ProductPricingInput]
     objective: str = Field(default="profit")
-    global_constraints: Optional[PriceConstraints] = None
+    global_constraints: PriceConstraints | None = None
 
 
 class BatchOptimizationResponse(BaseModel):
     """Response for batch optimization."""
+
     results: list[OptimizationResult]
     total_products: int
     total_revenue_change_pct: float
@@ -91,6 +96,7 @@ class BatchOptimizationResponse(BaseModel):
 
 class SensitivityRequest(BaseModel):
     """Request for price sensitivity analysis."""
+
     product_id: str
     current_price: float
     current_demand: float
@@ -102,6 +108,7 @@ class SensitivityRequest(BaseModel):
 
 class SensitivityPoint(BaseModel):
     """Single point in sensitivity analysis."""
+
     price: float
     price_change_pct: float
     demand: float
@@ -112,6 +119,7 @@ class SensitivityPoint(BaseModel):
 
 class SensitivityResponse(BaseModel):
     """Response for sensitivity analysis."""
+
     product_id: str
     analysis: list[SensitivityPoint]
     optimal_price: float
@@ -173,8 +181,12 @@ async def optimize_prices(
             if product.constraints.max_price:
                 max_price = min(max_price, product.constraints.max_price)
             if product.constraints.max_price_change:
-                min_price = max(min_price, current_price * (1 - product.constraints.max_price_change))
-                max_price = min(max_price, current_price * (1 + product.constraints.max_price_change))
+                min_price = max(
+                    min_price, current_price * (1 - product.constraints.max_price_change)
+                )
+                max_price = min(
+                    max_price, current_price * (1 + product.constraints.max_price_change)
+                )
 
         best_price = current_price
         best_profit = profit_at_price(current_price)
@@ -198,28 +210,48 @@ async def optimize_prices(
         total_current_profit += current_profit
         total_predicted_profit += predicted_profit
 
-        results.append(OptimizationResult(
-            product_id=product.product_id,
-            current_price=current_price,
-            optimal_price=round(best_price, 2),
-            price_change_pct=round((best_price - current_price) / current_price * 100, 2),
-            predicted_demand=round(predicted_demand, 1),
-            demand_change_pct=round((predicted_demand - current_demand) / current_demand * 100, 2),
-            predicted_revenue=round(predicted_revenue, 2),
-            revenue_change_pct=round((predicted_revenue - current_revenue) / current_revenue * 100, 2),
-            predicted_profit=round(predicted_profit, 2),
-            profit_change_pct=round((predicted_profit - current_profit) / current_profit * 100, 2) if current_profit > 0 else 0,
-            elasticity_used=elasticity,
-            constraints_satisfied=True,
-        ))
+        results.append(
+            OptimizationResult(
+                product_id=product.product_id,
+                current_price=current_price,
+                optimal_price=round(best_price, 2),
+                price_change_pct=round((best_price - current_price) / current_price * 100, 2),
+                predicted_demand=round(predicted_demand, 1),
+                demand_change_pct=round(
+                    (predicted_demand - current_demand) / current_demand * 100, 2
+                ),
+                predicted_revenue=round(predicted_revenue, 2),
+                revenue_change_pct=round(
+                    (predicted_revenue - current_revenue) / current_revenue * 100, 2
+                ),
+                predicted_profit=round(predicted_profit, 2),
+                profit_change_pct=(
+                    round((predicted_profit - current_profit) / current_profit * 100, 2)
+                    if current_profit > 0
+                    else 0
+                ),
+                elasticity_used=elasticity,
+                constraints_satisfied=True,
+            )
+        )
 
     processing_time = (time.time() - start_time) * 1000
 
     return BatchOptimizationResponse(
         results=results,
         total_products=len(results),
-        total_revenue_change_pct=round((total_predicted_revenue - total_current_revenue) / total_current_revenue * 100, 2) if total_current_revenue > 0 else 0,
-        total_profit_change_pct=round((total_predicted_profit - total_current_profit) / total_current_profit * 100, 2) if total_current_profit > 0 else 0,
+        total_revenue_change_pct=(
+            round(
+                (total_predicted_revenue - total_current_revenue) / total_current_revenue * 100, 2
+            )
+            if total_current_revenue > 0
+            else 0
+        ),
+        total_profit_change_pct=(
+            round((total_predicted_profit - total_current_profit) / total_current_profit * 100, 2)
+            if total_current_profit > 0
+            else 0
+        ),
         processing_time_ms=round(processing_time, 2),
         timestamp=datetime.now(),
     )
@@ -239,8 +271,8 @@ async def estimate_elasticity(
     - semi_log: Semi-logarithmic model
     """
     import numpy as np
-    from sklearn.linear_model import LinearRegression
     from scipy import stats
+    from sklearn.linear_model import LinearRegression
 
     logger.info(
         "Elasticity estimation request",
@@ -261,7 +293,9 @@ async def estimate_elasticity(
     quantities = quantities[valid_mask]
 
     if len(prices) < 10:
-        raise HTTPException(status_code=400, detail="Insufficient data (need at least 10 valid observations)")
+        raise HTTPException(
+            status_code=400, detail="Insufficient data (need at least 10 valid observations)"
+        )
 
     # Log-log model: ln(Q) = a + e*ln(P)
     log_prices = np.log(prices).reshape(-1, 1)
@@ -277,13 +311,13 @@ async def estimate_elasticity(
     residuals = log_quantities - y_pred
     n = len(log_quantities)
 
-    mse = np.sum(residuals ** 2) / (n - 2)
+    mse = np.sum(residuals**2) / (n - 2)
     se = np.sqrt(mse / np.sum((log_prices.flatten() - np.mean(log_prices)) ** 2))
 
     t_stat = elasticity / se
     p_value = 2 * (1 - stats.t.cdf(abs(t_stat), n - 2))
 
-    ss_res = np.sum(residuals ** 2)
+    ss_res = np.sum(residuals**2)
     ss_tot = np.sum((log_quantities - np.mean(log_quantities)) ** 2)
     r_squared = 1 - ss_res / ss_tot
 
@@ -345,14 +379,18 @@ async def sensitivity_analysis(
         profit = (price - request.cost) * demand
         margin = (price - request.cost) / price * 100
 
-        analysis.append(SensitivityPoint(
-            price=round(price, 2),
-            price_change_pct=round((price - request.current_price) / request.current_price * 100, 2),
-            demand=round(demand, 1),
-            revenue=round(revenue, 2),
-            profit=round(profit, 2),
-            margin_pct=round(margin, 2),
-        ))
+        analysis.append(
+            SensitivityPoint(
+                price=round(price, 2),
+                price_change_pct=round(
+                    (price - request.current_price) / request.current_price * 100, 2
+                ),
+                demand=round(demand, 1),
+                revenue=round(revenue, 2),
+                profit=round(profit, 2),
+                margin_pct=round(margin, 2),
+            )
+        )
 
         if profit > best_profit:
             best_profit = profit

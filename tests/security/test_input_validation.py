@@ -17,9 +17,7 @@ class TestInputValidation:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("payload", XSS_PAYLOADS)
-    async def test_xss_in_customer_id(
-        self, client: AsyncClient, auth_headers, payload
-    ):
+    async def test_xss_in_customer_id(self, client: AsyncClient, auth_headers, payload):
         """Test XSS payloads in customer_id."""
         response = await client.post(
             "/v1/uplift/predict",
@@ -31,9 +29,7 @@ class TestInputValidation:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("payload", XSS_PAYLOADS)
-    async def test_xss_in_experiment_name(
-        self, client: AsyncClient, auth_headers, payload
-    ):
+    async def test_xss_in_experiment_name(self, client: AsyncClient, auth_headers, payload):
         """Test XSS payloads in experiment name."""
         response = await client.post(
             "/v1/experiments",
@@ -80,4 +76,3 @@ class TestInputValidation:
         )
 
         assert response.status_code in [400, 422]
-

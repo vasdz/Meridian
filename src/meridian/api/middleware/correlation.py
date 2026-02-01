@@ -1,7 +1,7 @@
 """Correlation ID middleware for request tracing."""
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -41,4 +41,3 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
         response.headers[self.REQUEST_ID_HEADER] = request_id
 
         return response
-

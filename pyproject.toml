@@ -75,6 +75,8 @@ include = '\.pyi?$'
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -87,9 +89,13 @@ select = [
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
+    "B017",  # pytest.raises(Exception) is acceptable in tests
+    "B023",  # function definition in loop - acceptable for closures
+    "B904",  # raise from in except - not always needed
+    "E741",  # ambiguous variable name - I for identity matrix is fine
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["meridian"]
 
 [tool.mypy]

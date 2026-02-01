@@ -1,8 +1,9 @@
 """API fuzzing tests."""
 
-import pytest
 import random
 import string
+
+import pytest
 from httpx import AsyncClient
 
 
@@ -21,9 +22,7 @@ class TestAPIFuzzing:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("_", range(20))
-    async def test_random_customer_ids(
-        self, client: AsyncClient, auth_headers, _
-    ):
+    async def test_random_customer_ids(self, client: AsyncClient, auth_headers, _):
         """Fuzz customer_ids with random data."""
         customer_ids = [random_string(random.randint(1, 100)) for _ in range(5)]
 
@@ -38,9 +37,7 @@ class TestAPIFuzzing:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("_", range(10))
-    async def test_random_unicode_input(
-        self, client: AsyncClient, auth_headers, _
-    ):
+    async def test_random_unicode_input(self, client: AsyncClient, auth_headers, _):
         """Fuzz with random unicode."""
         response = await client.post(
             "/v1/experiments",
@@ -104,4 +101,3 @@ class TestAPIFuzzing:
         )
 
         assert response.status_code in [400, 422]
-

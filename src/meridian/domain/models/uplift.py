@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -27,11 +26,11 @@ class UpliftPrediction:
     cate: float  # Conditional Average Treatment Effect
 
     # Optional confidence interval
-    confidence_interval: Optional[ConfidenceInterval] = None
+    confidence_interval: ConfidenceInterval | None = None
 
     # Model info
-    model_id: Optional[str] = None
-    model_version: Optional[str] = None
+    model_id: str | None = None
+    model_version: str | None = None
 
     # Metadata
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -65,4 +64,3 @@ class UpliftPrediction:
             }
 
         return result
-

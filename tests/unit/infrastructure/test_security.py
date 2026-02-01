@@ -2,14 +2,14 @@
 
 import pytest
 
-from meridian.infrastructure.security.encryption import FieldEncryptor
 from meridian.core.security import (
-    hash_password,
-    verify_password,
+    constant_time_compare,
     generate_api_key,
     hash_api_key,
-    constant_time_compare,
+    hash_password,
+    verify_password,
 )
+from meridian.infrastructure.security.encryption import FieldEncryptor
 
 
 class TestFieldEncryptor:
@@ -103,6 +103,7 @@ class TestAPIKeyGeneration:
         """Test API key hashing."""
         # Use dynamically generated key to avoid secret detection
         import secrets
+
         key = f"mk_test_{secrets.token_hex(12)}"
         hashed = hash_api_key(key)
 
@@ -114,4 +115,3 @@ class TestAPIKeyGeneration:
         assert constant_time_compare("abc", "abc") is True
         assert constant_time_compare("abc", "def") is False
         assert constant_time_compare("abc", "ab") is False
-

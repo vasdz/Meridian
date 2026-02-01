@@ -1,10 +1,7 @@
 """HashiCorp Vault client for secrets management."""
 
-from typing import Optional
-
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -14,8 +11,8 @@ class VaultClient:
 
     def __init__(
         self,
-        address: Optional[str] = None,
-        token: Optional[str] = None,
+        address: str | None = None,
+        token: str | None = None,
     ):
         self.address = address or settings.vault_address
         self.token = token or settings.vault_token
@@ -43,7 +40,7 @@ class VaultClient:
 
         return self._client
 
-    def get_secret(self, path: str, key: Optional[str] = None) -> Optional[str]:
+    def get_secret(self, path: str, key: str | None = None) -> str | None:
         """Get secret from Vault."""
         client = self._get_client()
 
@@ -82,7 +79,7 @@ class VaultClient:
             logger.error("Failed to store secret", path=path, error=str(e))
             return False
 
-    def get_database_credentials(self, role: str = "meridian-db") -> Optional[dict]:
+    def get_database_credentials(self, role: str = "meridian-db") -> dict | None:
         """Get dynamic database credentials."""
         client = self._get_client()
 
@@ -101,7 +98,7 @@ class VaultClient:
 
 
 # Singleton
-_vault_client: Optional[VaultClient] = None
+_vault_client: VaultClient | None = None
 
 
 def get_vault_client() -> VaultClient:
@@ -112,4 +109,3 @@ def get_vault_client() -> VaultClient:
         _vault_client = VaultClient()
 
     return _vault_client
-

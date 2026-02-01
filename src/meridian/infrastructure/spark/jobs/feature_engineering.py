@@ -2,14 +2,12 @@
 
 from meridian.core.logging import get_logger
 
-
 logger = get_logger(__name__)
 
 
 def compute_customer_features(spark, transactions_df, output_path: str):
     """Compute customer-level features from transactions."""
     from pyspark.sql import functions as F
-    from pyspark.sql.window import Window
 
     logger.info("Computing customer features")
 
@@ -59,4 +57,3 @@ def compute_product_features(spark, transactions_df, output_path: str):
     product_features.write.format("delta").mode("overwrite").save(output_path)
 
     return product_features
-

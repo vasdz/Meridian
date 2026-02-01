@@ -1,7 +1,5 @@
 """Forecasting request schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -9,7 +7,7 @@ class ForecastItem(BaseModel):
     """Item to forecast."""
 
     item_id: str = Field(..., min_length=1, max_length=64)
-    store_id: Optional[str] = Field(None, max_length=64)
+    store_id: str | None = Field(None, max_length=64)
 
 
 class DemandForecastRequest(BaseModel):
@@ -27,7 +25,7 @@ class DemandForecastRequest(BaseModel):
         le=365,
         description="Forecast horizon in days",
     )
-    model_id: Optional[str] = Field(
+    model_id: str | None = Field(
         None,
         description="ID of forecasting model to use",
     )
@@ -35,4 +33,3 @@ class DemandForecastRequest(BaseModel):
         default=[0.1, 0.5, 0.9],
         description="Prediction quantiles",
     )
-

@@ -1,18 +1,17 @@
 """Redis cache adapter."""
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 import redis.asyncio as redis
 
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
 
-
 logger = get_logger(__name__)
 
 # Global Redis connection
-_redis: Optional[redis.Redis] = None
+_redis: redis.Redis | None = None
 
 
 async def init_redis() -> None:
@@ -68,7 +67,7 @@ class RedisCache:
         """Create prefixed cache key."""
         return f"{self.prefix}:{key}"
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache."""
         if _redis is None:
             return None
@@ -164,4 +163,3 @@ class RedisCache:
         if keys:
             return await _redis.delete(*keys)
         return 0
-

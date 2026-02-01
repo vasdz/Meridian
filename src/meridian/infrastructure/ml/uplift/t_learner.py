@@ -1,11 +1,9 @@
 """T-Learner implementation for uplift modeling."""
 
 import numpy as np
-from typing import Optional
 
-from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 
 logger = get_logger(__name__)
 
@@ -36,8 +34,8 @@ class TLearner(MetaLearner):
         super().__init__(model_id, base_learner, **kwargs)
 
         # Two separate models
-        self._mu0: Optional[object] = None  # E[Y|X, T=0]
-        self._mu1: Optional[object] = None  # E[Y|X, T=1]
+        self._mu0: object | None = None  # E[Y|X, T=0]
+        self._mu1: object | None = None  # E[Y|X, T=1]
 
         self._is_fitted = False
 
@@ -201,4 +199,3 @@ class TLearner(MetaLearner):
         importance["average"] = (importance["control"] + importance["treatment"]) / 2
 
         return importance
-

@@ -1,8 +1,7 @@
 """Experiment analysis tasks."""
 
-from meridian.workers.celery_app import celery_app
 from meridian.core.logging import get_logger
-
+from meridian.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
 
@@ -42,4 +41,3 @@ def send_experiment_report(experiment_id: str, recipients: list[str]):
     # Would generate and send report
 
     return {"status": "success"}
-

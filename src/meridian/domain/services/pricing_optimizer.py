@@ -1,10 +1,7 @@
 """Pricing optimizer domain service."""
 
-from typing import Optional
-
-from meridian.domain.models.pricing import PricePoint, PriceOptimizationResult
 from meridian.core.logging import get_logger
-
+from meridian.domain.models.pricing import PriceOptimizationResult, PricePoint
 
 logger = get_logger(__name__)
 
@@ -42,7 +39,7 @@ class PricingOptimizer:
         self,
         current_price: float,
         elasticity: float,
-        cost: Optional[float] = None,
+        cost: float | None = None,
         objective: str = "maximize_profit",
     ) -> float:
         """
@@ -75,7 +72,7 @@ class PricingOptimizer:
         self,
         price_points: list[PricePoint],
         objective: str = "maximize_profit",
-        constraints: Optional[dict] = None,
+        constraints: dict | None = None,
     ) -> PriceOptimizationResult:
         """Optimize prices for multiple products."""
         constraints = constraints or {}
@@ -122,4 +119,3 @@ class PricingOptimizer:
             expected_revenue_change=total_revenue_change,
             expected_profit_change=total_profit_change,
         )
-

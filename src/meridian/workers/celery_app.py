@@ -4,7 +4,6 @@ from celery import Celery
 
 from meridian.core.config import settings
 
-
 # Create Celery app
 celery_app = Celery(
     "meridian",
@@ -42,4 +41,3 @@ celery_app.conf.beat_schedule = {
         "schedule": 3600.0,  # Every hour
     },
 }
-

@@ -1,11 +1,9 @@
 """S-Learner implementation for uplift modeling."""
 
 import numpy as np
-from typing import Optional
 
-from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 
 logger = get_logger(__name__)
 
@@ -37,10 +35,10 @@ class SLearner(MetaLearner):
     ):
         super().__init__(model_id, base_learner, **kwargs)
 
-        self._model: Optional[object] = None
+        self._model: object | None = None
         self._treatment_position = treatment_feature_position
         self._is_fitted = False
-        self._n_features: Optional[int] = None
+        self._n_features: int | None = None
 
     def _add_treatment_feature(
         self,
@@ -224,4 +222,3 @@ class SLearner(MetaLearner):
             return {}
 
         return importance
-

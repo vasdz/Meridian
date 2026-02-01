@@ -4,9 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from meridian.api.dependencies.auth import get_current_user, require_scopes, TokenData
+from meridian.api.dependencies.auth import TokenData, require_scopes
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -70,4 +69,3 @@ async def clear_cache(
     """Clear all caches."""
     logger.info("Clearing cache", user_id=current_user.user_id)
     return {"status": "cleared"}
-

@@ -1,11 +1,10 @@
 """Event bus implementation."""
 
-from meridian.core.events import DomainEvent, event_bus
 from meridian.application.interfaces.event_publisher import EventPublisherInterface
-from meridian.infrastructure.messaging.kafka_producer import KafkaProducer
 from meridian.core.config import settings
+from meridian.core.events import DomainEvent, event_bus
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.messaging.kafka_producer import KafkaProducer
 
 logger = get_logger(__name__)
 
@@ -41,4 +40,3 @@ class EventBusPublisher(EventPublisherInterface):
         """Publish multiple events."""
         for event in events:
             await self.publish(event)
-

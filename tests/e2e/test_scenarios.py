@@ -88,4 +88,3 @@ class TestHealthScenario:
         # Readiness check
         response = await client.get("/ready")
         assert response.status_code == 200
-

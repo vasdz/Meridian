@@ -1,6 +1,7 @@
 """Database session dependency."""
 
-from typing import Annotated, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,4 +17,3 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 # Type alias for dependency injection
 DBSession = Annotated[AsyncSession, Depends(get_db_session)]
-

@@ -1,10 +1,9 @@
 """Integration tests for uplift models."""
 
-import pytest
 import numpy as np
 
-from meridian.infrastructure.ml.uplift.x_learner import XLearner
 from meridian.infrastructure.ml.uplift.causal_forest import CausalForest
+from meridian.infrastructure.ml.uplift.x_learner import XLearner
 
 
 class TestXLearnerIntegration:
@@ -67,4 +66,3 @@ class TestCausalForestIntegration:
         predictions = model.predict(X[:10])
 
         assert len(predictions) == 10
-

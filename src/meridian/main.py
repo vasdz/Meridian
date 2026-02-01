@@ -1,30 +1,30 @@
 """FastAPI application factory."""
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from meridian.core.config import settings
-from meridian.core.logging import setup_logging
-from meridian.api.middleware.security_headers import SecurityHeadersMiddleware
 from meridian.api.middleware.correlation import CorrelationMiddleware
-from meridian.api.middleware.timing import TimingMiddleware
 from meridian.api.middleware.exception_handler import setup_exception_handlers
+from meridian.api.middleware.security_headers import SecurityHeadersMiddleware
+from meridian.api.middleware.timing import TimingMiddleware
 from meridian.api.routers import health
 from meridian.api.routers.v1 import (
-    uplift,
-    forecasting,
-    pricing,
-    experiments,
-    customers,
     admin,
+    customers,
+    experiments,
+    forecasting,
     monitoring,
+    pricing,
+    uplift,
 )
-from meridian.infrastructure.database.connection import init_db, close_db
-from meridian.infrastructure.cache.redis_cache import init_redis, close_redis
+from meridian.core.config import settings
+from meridian.core.logging import setup_logging
+from meridian.infrastructure.cache.redis_cache import close_redis, init_redis
+from meridian.infrastructure.database.connection import close_db, init_db
 
 
 @asynccontextmanager
@@ -85,4 +85,3 @@ def create_app() -> FastAPI:
 
 # Application instance
 app = create_app()
-

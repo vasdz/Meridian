@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -15,22 +14,22 @@ class Transaction:
     quantity: int = 1
 
     # Product info
-    product_id: Optional[str] = None
-    category: Optional[str] = None
+    product_id: str | None = None
+    category: str | None = None
 
     # Channel info
-    channel: Optional[str] = None
-    store_id: Optional[str] = None
+    channel: str | None = None
+    store_id: str | None = None
 
     # Pricing
-    unit_price: Optional[float] = None
+    unit_price: float | None = None
     discount_amount: float = 0.0
 
     # Flags
     is_return: bool = False
 
     # Promotion
-    promotion_id: Optional[str] = None
+    promotion_id: str | None = None
 
     # Timestamps
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -53,4 +52,3 @@ class Transaction:
             "channel": self.channel,
             "created_at": self.created_at.isoformat(),
         }
-

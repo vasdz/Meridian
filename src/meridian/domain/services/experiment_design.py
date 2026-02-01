@@ -1,12 +1,10 @@
 """Experiment design domain service."""
 
 import math
-from typing import Optional
 
 from scipy import stats
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -42,16 +40,14 @@ class ExperimentDesignService:
 
         # Pooled standard deviation
         pooled_p = (p_control + p_treatment) / 2
-        pooled_sd = math.sqrt(2 * pooled_p * (1 - pooled_p))
+        math.sqrt(2 * pooled_p * (1 - pooled_p))
 
         # Z-scores
         z_alpha = stats.norm.ppf(1 - alpha / 2)
         z_power = stats.norm.ppf(power)
 
         # Sample size per group
-        n_per_group = (
-            2 * ((z_alpha + z_power) ** 2) * pooled_p * (1 - pooled_p)
-        ) / (effect ** 2)
+        n_per_group = (2 * ((z_alpha + z_power) ** 2) * pooled_p * (1 - pooled_p)) / (effect**2)
 
         n_per_group = int(math.ceil(n_per_group))
 
@@ -116,15 +112,15 @@ class ExperimentDesignService:
 
         # Z-test for proportions
         pooled_p = (control_conversions + treatment_conversions) / (control_size + treatment_size)
-        se = math.sqrt(pooled_p * (1 - pooled_p) * (1/control_size + 1/treatment_size))
+        se = math.sqrt(pooled_p * (1 - pooled_p) * (1 / control_size + 1 / treatment_size))
 
         z_stat = (p_treatment - p_control) / se if se > 0 else 0
         p_value = 2 * (1 - stats.norm.cdf(abs(z_stat)))
 
         # Confidence interval
         se_diff = math.sqrt(
-            p_control * (1 - p_control) / control_size +
-            p_treatment * (1 - p_treatment) / treatment_size
+            p_control * (1 - p_control) / control_size
+            + p_treatment * (1 - p_treatment) / treatment_size
         )
         ci_low = (p_treatment - p_control) - 1.96 * se_diff
         ci_high = (p_treatment - p_control) + 1.96 * se_diff
@@ -139,4 +135,3 @@ class ExperimentDesignService:
             "confidence_interval": (ci_low, ci_high),
             "z_statistic": z_stat,
         }
-

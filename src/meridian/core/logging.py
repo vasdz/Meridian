@@ -3,20 +3,16 @@
 import logging
 import sys
 from contextvars import ContextVar
-from typing import Optional
 
 import structlog
 
 from meridian.core.config import settings
 
-
 # Context variable for correlation ID
-correlation_id_var: ContextVar[Optional[str]] = ContextVar(
-    "correlation_id", default=None
-)
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 
-def get_correlation_id() -> Optional[str]:
+def get_correlation_id() -> str | None:
     """Get current correlation ID."""
     return correlation_id_var.get()
 
@@ -90,4 +86,3 @@ def setup_logging() -> None:
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Get a bound logger instance."""
     return structlog.get_logger(name)
-

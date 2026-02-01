@@ -10,20 +10,19 @@ This module provides enterprise-level ML pipeline capabilities:
 Designed for hyperscale ML operations.
 """
 
-import numpy as np
-import pandas as pd
+import hashlib
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional, Any, Callable, Generic, TypeVar
 from datetime import datetime
 from enum import Enum
-import hashlib
-import json
-import time
-from functools import wraps
+from typing import Any, TypeVar
+
+import numpy as np
+import pandas as pd
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -33,6 +32,7 @@ T = TypeVar("T")
 
 class PipelineStatus(Enum):
     """Pipeline execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
@@ -42,6 +42,7 @@ class PipelineStatus(Enum):
 
 class StepType(Enum):
     """Type of pipeline step."""
+
     EXTRACT = "extract"
     TRANSFORM = "transform"
     VALIDATE = "validate"
@@ -63,15 +64,15 @@ class StepResult:
     duration_seconds: float
 
     # Data
-    output: Optional[Any] = None
-    output_shape: Optional[tuple] = None
+    output: Any | None = None
+    output_shape: tuple | None = None
 
     # Metrics
     metrics: dict[str, float] = field(default_factory=dict)
 
     # Error info
-    error_message: Optional[str] = None
-    error_traceback: Optional[str] = None
+    error_message: str | None = None
+    error_traceback: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -99,7 +100,7 @@ class PipelineResult:
     total_duration_seconds: float
 
     step_results: list[StepResult] = field(default_factory=list)
-    final_output: Optional[Any] = None
+    final_output: Any | None = None
     aggregate_metrics: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -123,7 +124,7 @@ class PipelineStep(ABC):
         name: str,
         step_type: StepType,
         retry_count: int = 0,
-        timeout_seconds: Optional[int] = None,
+        timeout_seconds: int | None = None,
     ):
         self.name = name
         self.step_type = step_type
@@ -167,7 +168,7 @@ class DataValidationStep(PipelineStep):
     def __init__(
         self,
         name: str = "data_validation",
-        checks: Optional[list[Callable]] = None,
+        checks: list[Callable] | None = None,
         fail_on_error: bool = True,
     ):
         super().__init__(name, StepType.VALIDATE)
@@ -185,11 +186,13 @@ class DataValidationStep(PipelineStep):
         for check in self.checks:
             try:
                 passed, message = check(input_data)
-                validation_results.append({
-                    "check": check.__name__,
-                    "passed": passed,
-                    "message": message,
-                })
+                validation_results.append(
+                    {
+                        "check": check.__name__,
+                        "passed": passed,
+                        "message": message,
+                    }
+                )
 
                 if not passed and self.fail_on_error:
                     raise ValueError(f"Validation failed: {message}")
@@ -197,11 +200,13 @@ class DataValidationStep(PipelineStep):
             except Exception as e:
                 if self.fail_on_error:
                     raise
-                validation_results.append({
-                    "check": check.__name__,
-                    "passed": False,
-                    "message": str(e),
-                })
+                validation_results.append(
+                    {
+                        "check": check.__name__,
+                        "passed": False,
+                        "message": str(e),
+                    }
+                )
 
         context["validation_results"] = validation_results
         return input_data
@@ -213,7 +218,7 @@ class FeatureEngineeringStep(PipelineStep):
     def __init__(
         self,
         name: str = "feature_engineering",
-        transformations: Optional[list[Callable]] = None,
+        transformations: list[Callable] | None = None,
     ):
         super().__init__(name, StepType.TRANSFORM)
         self.transformations = transformations or []
@@ -240,9 +245,9 @@ class ModelTrainingStep(PipelineStep):
     def __init__(
         self,
         name: str = "model_training",
-        model_factory: Optional[Callable] = None,
+        model_factory: Callable | None = None,
         target_column: str = "target",
-        feature_columns: Optional[list[str]] = None,
+        feature_columns: list[str] | None = None,
     ):
         super().__init__(name, StepType.TRAIN)
         self.model_factory = model_factory
@@ -260,9 +265,7 @@ class ModelTrainingStep(PipelineStep):
         y = input_data[self.target_column]
 
         # Split data
-        X_train, X_val, y_train, y_val = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # Create and train model
         model = self.model_factory() if self.model_factory else self._default_model()
@@ -291,6 +294,7 @@ class ModelTrainingStep(PipelineStep):
 
     def _default_model(self):
         from sklearn.ensemble import GradientBoostingRegressor
+
         return GradientBoostingRegressor(n_estimators=100, max_depth=5)
 
 
@@ -300,8 +304,8 @@ class InferenceStep(PipelineStep):
     def __init__(
         self,
         name: str = "inference",
-        model: Optional[Any] = None,
-        feature_columns: Optional[list[str]] = None,
+        model: Any | None = None,
+        feature_columns: list[str] | None = None,
         batch_size: int = 1000,
     ):
         super().__init__(name, StepType.INFERENCE)
@@ -328,7 +332,7 @@ class InferenceStep(PipelineStep):
         # Batch prediction for memory efficiency
         predictions = []
         for i in range(0, len(X), self.batch_size):
-            batch = X.iloc[i:i+self.batch_size]
+            batch = X.iloc[i : i + self.batch_size]
             batch_pred = self.model.predict(batch)
             predictions.extend(batch_pred)
 
@@ -353,7 +357,7 @@ class Pipeline:
     def __init__(
         self,
         name: str,
-        steps: Optional[list[PipelineStep]] = None,
+        steps: list[PipelineStep] | None = None,
         enable_caching: bool = False,
     ):
         self.name = name
@@ -375,7 +379,7 @@ class Pipeline:
     def run(
         self,
         input_data: Any,
-        context: Optional[dict] = None,
+        context: dict | None = None,
     ) -> PipelineResult:
         """
         Execute the pipeline.
@@ -435,7 +439,7 @@ class Pipeline:
                                 attempt=attempt + 1,
                                 error=str(e),
                             )
-                            time.sleep(2 ** attempt)  # Exponential backoff
+                            time.sleep(2**attempt)  # Exponential backoff
 
                     # Validate output
                     if not step.validate_output(current_data):
@@ -445,6 +449,7 @@ class Pipeline:
 
                 except Exception as e:
                     import traceback
+
                     step_status = PipelineStatus.FAILED
                     step_error = str(e)
                     step_traceback = traceback.format_exc()
@@ -535,7 +540,7 @@ class PipelineRegistry:
         self._pipelines[pipeline.name] = pipeline
         logger.info(f"Registered pipeline: {pipeline.name}")
 
-    def get(self, name: str) -> Optional[Pipeline]:
+    def get(self, name: str) -> Pipeline | None:
         """Get pipeline by name."""
         return self._pipelines.get(name)
 
@@ -557,12 +562,13 @@ class PipelineRegistry:
 
 # Factory functions for common pipelines
 
+
 def create_training_pipeline(
     name: str,
     model_factory: Callable,
     target_column: str,
-    validation_checks: Optional[list[Callable]] = None,
-    transformations: Optional[list[Callable]] = None,
+    validation_checks: list[Callable] | None = None,
+    transformations: list[Callable] | None = None,
 ) -> Pipeline:
     """Create a standard training pipeline."""
     pipeline = Pipeline(name)
@@ -591,7 +597,7 @@ def create_inference_pipeline(
     name: str,
     model: Any,
     feature_columns: list[str],
-    transformations: Optional[list[Callable]] = None,
+    transformations: list[Callable] | None = None,
 ) -> Pipeline:
     """Create a standard inference pipeline."""
     pipeline = Pipeline(name)
@@ -609,4 +615,3 @@ def create_inference_pipeline(
     pipeline.add_step(inference)
 
     return pipeline
-

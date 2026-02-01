@@ -1,11 +1,10 @@
 """Uplift modeling metrics: AUUC, Qini, Uplift curves."""
 
-import numpy as np
 from dataclasses import dataclass
-from typing import Optional
+
+import numpy as np
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -77,7 +76,7 @@ def calculate_uplift_curve(
 
     n = len(y_true)
     n_t_total = np.sum(treatment)
-    n_c_total = n - n_t_total
+    n - n_t_total
 
     # Calculate cumulative response rates
     percentiles = np.linspace(0, 1, n_bins + 1)[1:]  # Skip 0
@@ -220,9 +219,7 @@ def calculate_qini_coefficient(
     Returns:
         Qini coefficient
     """
-    percentiles, qini_values = calculate_qini_curve(
-        y_true, treatment, uplift_scores, n_bins
-    )
+    percentiles, qini_values = calculate_qini_curve(y_true, treatment, uplift_scores, n_bins)
 
     # Area under model curve
     auc_model = np.trapz(qini_values, percentiles)
@@ -331,7 +328,7 @@ def evaluate_uplift_model(
 
     # Calculate ATE
     n_t = np.sum(treatment)
-    n_c = len(treatment) - n_t
+    len(treatment) - n_t
     ate = np.mean(y_true[treatment == 1]) - np.mean(y_true[treatment == 0])
 
     # Random model AUUC (baseline)
@@ -342,11 +339,11 @@ def evaluate_uplift_model(
     # For binary outcomes, perfect targeting = target only positive responders
     if len(np.unique(y_true)) == 2:
         # Binary outcome: perfect = target treated responders, avoid control responders
-        perfect_scores = y_true * treatment - y_true * (1 - treatment)
+        y_true * treatment - y_true * (1 - treatment)
     else:
         # Continuous: use true uplift as perfect scores
         # This is an approximation since we don't know true individual effects
-        perfect_scores = uplift_scores  # Will be updated if we have oracle
+        pass  # Will be updated if we have oracle
 
     auuc_perfect = calculate_auuc(y_true, treatment, y_true * (2 * treatment - 1), n_bins)
 
@@ -394,13 +391,9 @@ def plot_uplift_curves(
     Returns:
         Dictionary with curve data
     """
-    percentiles, uplift_curve = calculate_uplift_curve(
-        y_true, treatment, uplift_scores, n_bins
-    )
+    percentiles, uplift_curve = calculate_uplift_curve(y_true, treatment, uplift_scores, n_bins)
 
-    _, qini_curve = calculate_qini_curve(
-        y_true, treatment, uplift_scores, n_bins
-    )
+    _, qini_curve = calculate_qini_curve(y_true, treatment, uplift_scores, n_bins)
 
     # Random baseline
     random_scores = np.random.randn(len(y_true))
@@ -419,4 +412,3 @@ def plot_uplift_curves(
             "random": random_qini.tolist(),
         },
     }
-

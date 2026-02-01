@@ -2,7 +2,6 @@
 
 from abc import abstractmethod
 from datetime import date
-from typing import Optional
 
 from meridian.domain.models.transaction import Transaction
 from meridian.domain.repositories.base import AbstractRepository
@@ -37,4 +36,3 @@ class TransactionRepository(AbstractRepository[Transaction]):
     ) -> dict:
         """Get aggregated totals for a customer."""
         pass
-

@@ -1,10 +1,6 @@
 """Security audit logger."""
 
-from datetime import datetime
-from typing import Optional
-
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -24,11 +20,11 @@ class AuditLogger:
 
     @staticmethod
     async def log_authentication(
-        user_id: Optional[str],
+        user_id: str | None,
         success: bool,
         method: str,
         client_ip: str,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> None:
         """Log authentication attempt."""
         logger.info(
@@ -80,7 +76,7 @@ class AuditLogger:
         event_type: str,
         severity: str,
         description: str,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> None:
         """Log security event (suspicious activity, etc.)."""
         log_func = logger.warning if severity == "high" else logger.info
@@ -92,4 +88,3 @@ class AuditLogger:
             description=description,
             details=details,
         )
-

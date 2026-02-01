@@ -1,7 +1,6 @@
 """Base SQLAlchemy model."""
 
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -43,4 +42,3 @@ class SoftDeleteMixin:
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
-

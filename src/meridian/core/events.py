@@ -1,8 +1,8 @@
 """Domain events system."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Optional
 from uuid import uuid4
 
 
@@ -12,7 +12,7 @@ class DomainEvent:
 
     event_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
 
     @property
     def event_type(self) -> str:
@@ -60,7 +60,7 @@ class ExperimentCompleted(DomainEvent):
     """Event: Experiment was completed."""
 
     experiment_id: str = ""
-    winner_variant: Optional[str] = None
+    winner_variant: str | None = None
     is_significant: bool = False
 
 
@@ -97,7 +97,7 @@ class EventBus:
         for handler in handlers:
             try:
                 handler(event)
-            except Exception as e:
+            except Exception:
                 # Log but don't fail
                 pass
 
@@ -108,4 +108,3 @@ class EventBus:
 
 # Global event bus instance
 event_bus = EventBus()
-

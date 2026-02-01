@@ -1,21 +1,20 @@
 """Uplift prediction endpoints."""
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from meridian.api.dependencies.auth import get_current_user, TokenData
+from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.api.dependencies.rate_limit import RateLimited
 from meridian.api.schemas.requests.uplift import (
-    UpliftPredictionRequest,
     UpliftBatchPredictionRequest,
+    UpliftPredictionRequest,
 )
 from meridian.api.schemas.responses.uplift import (
-    UpliftPredictionResponse,
     UpliftPrediction,
+    UpliftPredictionResponse,
 )
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -42,12 +41,14 @@ async def predict_uplift(
 
     # Placeholder predictions
     import random
+
     predictions = [
         UpliftPrediction(
             customer_id=cid,
             cate=random.uniform(-0.05, 0.15),
-            confidence_interval={"lower": -0.02, "upper": 0.12}
-            if request.return_confidence_intervals else None,
+            confidence_interval=(
+                {"lower": -0.02, "upper": 0.12} if request.return_confidence_intervals else None
+            ),
         )
         for cid in request.customer_ids
     ]
@@ -74,6 +75,7 @@ async def predict_uplift_batch(
     # Process in batches
     predictions = []
     import random
+
     for cid in request.customer_ids:
         predictions.append(
             UpliftPrediction(
@@ -100,4 +102,3 @@ async def list_uplift_models(
             {"id": "x_learner_v1", "type": "x_learner", "version": "1.0.0"},
         ]
     }
-

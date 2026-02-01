@@ -1,7 +1,6 @@
 """Experiment repository interface."""
 
 from abc import abstractmethod
-from typing import Optional
 
 from meridian.domain.models.experiment import Experiment
 from meridian.domain.repositories.base import AbstractRepository
@@ -42,4 +41,3 @@ class ExperimentRepository(AbstractRepository[Experiment]):
     ) -> bool:
         """Set experiment results."""
         pass
-

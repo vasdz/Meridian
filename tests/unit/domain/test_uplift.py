@@ -1,9 +1,9 @@
 """Unit tests for uplift domain model."""
 
-import pytest
 import numpy as np
+import pytest
 
-from meridian.domain.models.uplift import UpliftPrediction, ConfidenceInterval
+from meridian.domain.models.uplift import ConfidenceInterval, UpliftPrediction
 from meridian.domain.services.uplift_calculator import UpliftCalculator
 
 
@@ -140,4 +140,3 @@ class TestUpliftCalculator:
         assert segments["persuadables"][0].customer_id == "c1"
         assert len(segments["sleeping_dogs"]) == 1
         assert segments["sleeping_dogs"][0].customer_id == "c3"
-

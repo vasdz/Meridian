@@ -2,7 +2,6 @@
 
 from meridian.core.logging import get_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -17,8 +16,11 @@ def train_uplift_model(spark, training_data_path: str, model_output_path: str):
 
     # Feature columns
     feature_cols = [
-        "age", "tenure_days", "total_spend",
-        "transaction_count", "avg_basket_size",
+        "age",
+        "tenure_days",
+        "total_spend",
+        "transaction_count",
+        "avg_basket_size",
     ]
 
     # Assemble features
@@ -35,4 +37,3 @@ def train_uplift_model(spark, training_data_path: str, model_output_path: str):
     logger.info("Model training complete")
 
     return df_assembled
-

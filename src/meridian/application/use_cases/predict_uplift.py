@@ -1,10 +1,7 @@
 """Predict uplift use case."""
 
-from typing import Optional
-
-from meridian.domain.models.uplift import UpliftPrediction, ConfidenceInterval
 from meridian.core.logging import get_logger
-
+from meridian.domain.models.uplift import ConfidenceInterval, UpliftPrediction
 
 logger = get_logger(__name__)
 
@@ -60,15 +57,15 @@ class PredictUpliftUseCase:
 
         if uncached_ids:
             # Fetch features
-            features = {}
             if self.customer_repository:
-                features = await self.customer_repository.get_features(uncached_ids)
+                await self.customer_repository.get_features(uncached_ids)
             else:
                 # Mock features
-                features = {cid: {"feature_1": 0.5} for cid in uncached_ids}
+                {cid: {"feature_1": 0.5} for cid in uncached_ids}
 
             # Generate predictions
             import random
+
             for cid in uncached_ids:
                 cate = random.uniform(-0.05, 0.15)
 
@@ -114,9 +111,8 @@ class PredictUpliftUseCase:
         all_predictions = []
 
         for i in range(0, len(customer_ids), batch_size):
-            batch = customer_ids[i:i + batch_size]
+            batch = customer_ids[i : i + batch_size]
             predictions = await self.execute(batch, **kwargs)
             all_predictions.extend(predictions)
 
         return all_predictions
-

@@ -1,14 +1,12 @@
 """SQL Experiment repository implementation."""
 
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from meridian.domain.models.experiment import Experiment, ExperimentVariant, ExperimentResults
+from meridian.core.constants import ExperimentStatus
+from meridian.domain.models.experiment import Experiment, ExperimentResults, ExperimentVariant
 from meridian.domain.repositories.experiment import ExperimentRepository
 from meridian.infrastructure.database.models.experiment import ExperimentModel
-from meridian.core.constants import ExperimentStatus
 
 
 class SQLExperimentRepository(ExperimentRepository):
@@ -45,14 +43,12 @@ class SQLExperimentRepository(ExperimentRepository):
             updated_at=model.updated_at,
         )
 
-    async def get(self, id: str) -> Optional[Experiment]:
+    async def get(self, id: str) -> Experiment | None:
         model = await self.session.get(ExperimentModel, id)
         return self._to_domain(model) if model else None
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Experiment]:
-        result = await self.session.execute(
-            select(ExperimentModel).limit(limit).offset(offset)
-        )
+        result = await self.session.execute(select(ExperimentModel).limit(limit).offset(offset))
         return [self._to_domain(m) for m in result.scalars().all()]
 
     async def add(self, entity: Experiment) -> Experiment:
@@ -132,4 +128,3 @@ class SQLExperimentRepository(ExperimentRepository):
             await self.session.flush()
             return True
         return False
-

@@ -1,7 +1,8 @@
 """Unit tests for predict uplift use case."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from meridian.application.use_cases.predict_uplift import PredictUpliftUseCase
 from meridian.domain.models.uplift import UpliftPrediction
@@ -60,4 +61,3 @@ class TestPredictUpliftUseCase:
         )
 
         assert len(predictions) == 100
-

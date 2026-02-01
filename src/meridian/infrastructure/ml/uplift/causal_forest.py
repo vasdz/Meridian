@@ -1,11 +1,9 @@
 """Causal Forest implementation using EconML."""
 
 import numpy as np
-from typing import Optional
 
-from meridian.infrastructure.ml.base import BaseMLModel
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.base import BaseMLModel
 
 logger = get_logger(__name__)
 
@@ -21,7 +19,7 @@ class CausalForest(BaseMLModel):
         self,
         model_id: str = "causal_forest",
         n_estimators: int = 100,
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
         min_samples_leaf: int = 5,
         **kwargs,
     ):
@@ -37,7 +35,7 @@ class CausalForest(BaseMLModel):
         X: np.ndarray,
         treatment: np.ndarray,
         y: np.ndarray,
-        W: Optional[np.ndarray] = None,
+        W: np.ndarray | None = None,
     ) -> None:
         """
         Fit the Causal Forest.
@@ -145,4 +143,3 @@ class CausalForest(BaseMLModel):
             return self._model.feature_importances_
         except AttributeError:
             return self._model.feature_importances_
-

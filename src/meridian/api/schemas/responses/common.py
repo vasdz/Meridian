@@ -1,6 +1,6 @@
 """Common response schemas."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ class SuccessResponse(BaseModel):
     """Generic success response."""
 
     success: bool = True
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class ErrorDetail(BaseModel):
@@ -17,8 +17,8 @@ class ErrorDetail(BaseModel):
 
     code: str
     message: str
-    details: Optional[dict[str, Any]] = None
-    request_id: Optional[str] = None
+    details: dict[str, Any] | None = None
+    request_id: str | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -47,4 +47,3 @@ class ValidationErrorResponse(BaseModel):
     """Validation error response."""
 
     detail: list[ValidationErrorDetail]
-

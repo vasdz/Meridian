@@ -8,15 +8,15 @@ This module implements attribution models for understanding channel contribution
 Critical for retail contact policy optimization.
 """
 
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
+from itertools import combinations
+
 import numpy as np
 import pandas as pd
-from itertools import combinations, permutations
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Optional, Callable
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -93,8 +93,8 @@ class ShapleyAttribution:
     def calculate(
         self,
         conversion_paths: list[list[str]],
-        conversion_values: Optional[list[float]] = None,
-        characteristic_function: Optional[Callable[[set], float]] = None,
+        conversion_values: list[float] | None = None,
+        characteristic_function: Callable[[set], float] | None = None,
     ) -> AttributionReport:
         """
         Calculate Shapley value attribution.
@@ -117,7 +117,7 @@ class ShapleyAttribution:
         all_channels = set()
         for path in conversion_paths:
             all_channels.update(path)
-        channels = sorted(list(all_channels))
+        channels = sorted(all_channels)
 
         logger.info(
             "Calculating Shapley attribution",
@@ -146,14 +146,18 @@ class ShapleyAttribution:
         for channel in channels:
             stats = channel_stats.get(channel, {})
 
-            results.append(AttributionResult(
-                channel=channel,
-                attribution_value=shapley_values[channel] / total_value if total_value > 0 else 0,
-                absolute_value=shapley_values[channel],
-                conversion_probability=stats.get("conversion_prob", 0),
-                avg_position=stats.get("avg_position", 0),
-                frequency=stats.get("frequency", 0),
-            ))
+            results.append(
+                AttributionResult(
+                    channel=channel,
+                    attribution_value=(
+                        shapley_values[channel] / total_value if total_value > 0 else 0
+                    ),
+                    absolute_value=shapley_values[channel],
+                    conversion_probability=stats.get("conversion_prob", 0),
+                    avg_position=stats.get("avg_position", 0),
+                    frequency=stats.get("frequency", 0),
+                )
+            )
 
         # Sort by attribution value
         results.sort(key=lambda x: x.attribution_value, reverse=True)
@@ -179,7 +183,7 @@ class ShapleyAttribution:
                 return 0.0
 
             total = 0.0
-            for path_set, value in zip(path_sets, conversion_values):
+            for path_set, value in zip(path_sets, conversion_values, strict=False):
                 # Conversion happens if coalition covers the path
                 if coalition.intersection(path_set):
                     total += value
@@ -196,7 +200,7 @@ class ShapleyAttribution:
         """Compute exact Shapley values for all channels."""
 
         n = len(channels)
-        shapley = {c: 0.0 for c in channels}
+        shapley = dict.fromkeys(channels, 0.0)
 
         # Factorial lookup
         factorials = [1]
@@ -204,7 +208,7 @@ class ShapleyAttribution:
             factorials.append(factorials[-1] * i)
 
         # For each channel, sum marginal contributions over all coalitions
-        for i, channel in enumerate(channels):
+        for _, channel in enumerate(channels):
             other_channels = [c for c in channels if c != channel]
 
             for size in range(n):
@@ -228,8 +232,8 @@ class ShapleyAttribution:
     ) -> dict[str, float]:
         """Approximate Shapley values using Monte Carlo sampling."""
 
-        shapley = {c: 0.0 for c in channels}
-        n = len(channels)
+        shapley = dict.fromkeys(channels, 0.0)
+        len(channels)
 
         for _ in range(self.n_samples):
             # Random permutation
@@ -259,13 +263,15 @@ class ShapleyAttribution:
     ) -> dict[str, dict]:
         """Calculate descriptive statistics for each channel."""
 
-        stats = defaultdict(lambda: {
-            "frequency": 0,
-            "total_value": 0,
-            "positions": [],
-        })
+        stats = defaultdict(
+            lambda: {
+                "frequency": 0,
+                "total_value": 0,
+                "positions": [],
+            }
+        )
 
-        for path, value in zip(conversion_paths, conversion_values):
+        for path, value in zip(conversion_paths, conversion_values, strict=False):
             for pos, channel in enumerate(path):
                 stats[channel]["frequency"] += 1
                 stats[channel]["total_value"] += value
@@ -277,7 +283,9 @@ class ShapleyAttribution:
         for channel, data in stats.items():
             result[channel] = {
                 "frequency": data["frequency"],
-                "conversion_prob": data["frequency"] / total_conversions if total_conversions > 0 else 0,
+                "conversion_prob": (
+                    data["frequency"] / total_conversions if total_conversions > 0 else 0
+                ),
                 "avg_position": np.mean(data["positions"]) if data["positions"] else 0,
             }
 
@@ -296,15 +304,15 @@ class MarkovAttribution:
     """
 
     def __init__(self):
-        self._transition_matrix: Optional[np.ndarray] = None
-        self._states: Optional[list[str]] = None
-        self._state_idx: Optional[dict[str, int]] = None
+        self._transition_matrix: np.ndarray | None = None
+        self._states: list[str] | None = None
+        self._state_idx: dict[str, int] | None = None
 
     def calculate(
         self,
         conversion_paths: list[list[str]],
-        non_conversion_paths: Optional[list[list[str]]] = None,
-        conversion_values: Optional[list[float]] = None,
+        non_conversion_paths: list[list[str]] | None = None,
+        conversion_values: list[float] | None = None,
     ) -> AttributionReport:
         """
         Calculate Markov chain attribution.
@@ -332,7 +340,7 @@ class MarkovAttribution:
                 all_channels.update(path)
 
         # Add special states
-        states = ["(start)"] + sorted(list(all_channels)) + ["(conversion)", "(null)"]
+        states = ["(start)"] + sorted(all_channels) + ["(conversion)", "(null)"]
         self._states = states
         self._state_idx = {s: i for i, s in enumerate(states)}
 
@@ -350,7 +358,7 @@ class MarkovAttribution:
 
         # Calculate removal effects
         removal_effects = {}
-        channels = sorted(list(all_channels))
+        channels = sorted(all_channels)
 
         for channel in channels:
             prob_without = self._calculate_conversion_probability(removed_channel=channel)
@@ -368,14 +376,16 @@ class MarkovAttribution:
             stats = channel_stats.get(channel, {})
             normalized = removal_effects[channel] / total_effect if total_effect > 0 else 0
 
-            results.append(AttributionResult(
-                channel=channel,
-                attribution_value=normalized,
-                absolute_value=normalized * total_value,
-                conversion_probability=stats.get("conversion_prob", 0),
-                avg_position=stats.get("avg_position", 0),
-                frequency=stats.get("frequency", 0),
-            ))
+            results.append(
+                AttributionResult(
+                    channel=channel,
+                    attribution_value=normalized,
+                    absolute_value=normalized * total_value,
+                    conversion_probability=stats.get("conversion_prob", 0),
+                    avg_position=stats.get("avg_position", 0),
+                    frequency=stats.get("frequency", 0),
+                )
+            )
 
         results.sort(key=lambda x: x.attribution_value, reverse=True)
 
@@ -445,7 +455,7 @@ class MarkovAttribution:
 
     def _calculate_conversion_probability(
         self,
-        removed_channel: Optional[str] = None,
+        removed_channel: str | None = None,
         max_steps: int = 100,
     ) -> float:
         """Calculate probability of reaching conversion from start."""
@@ -518,7 +528,7 @@ class MarkovAttribution:
 
         stats = defaultdict(lambda: {"frequency": 0, "positions": []})
 
-        for path, value in zip(conversion_paths, conversion_values):
+        for path, _value in zip(conversion_paths, conversion_values, strict=False):
             for pos, channel in enumerate(path):
                 stats[channel]["frequency"] += 1
                 stats[channel]["positions"].append(pos / len(path) if len(path) > 0 else 0)
@@ -529,7 +539,9 @@ class MarkovAttribution:
         for channel, data in stats.items():
             result[channel] = {
                 "frequency": data["frequency"],
-                "conversion_prob": data["frequency"] / total_conversions if total_conversions > 0 else 0,
+                "conversion_prob": (
+                    data["frequency"] / total_conversions if total_conversions > 0 else 0
+                ),
                 "avg_position": np.mean(data["positions"]) if data["positions"] else 0,
             }
 
@@ -542,7 +554,7 @@ class SimpleAttribution:
     @staticmethod
     def last_touch(
         conversion_paths: list[list[str]],
-        conversion_values: Optional[list[float]] = None,
+        conversion_values: list[float] | None = None,
     ) -> AttributionReport:
         """100% credit to last touchpoint."""
 
@@ -552,7 +564,7 @@ class SimpleAttribution:
         attributions = defaultdict(float)
         frequencies = defaultdict(int)
 
-        for path, value in zip(conversion_paths, conversion_values):
+        for path, value in zip(conversion_paths, conversion_values, strict=False):
             if path:
                 last_channel = path[-1]
                 attributions[last_channel] += value
@@ -565,7 +577,9 @@ class SimpleAttribution:
                 channel=channel,
                 attribution_value=value / total_value if total_value > 0 else 0,
                 absolute_value=value,
-                conversion_probability=frequencies[channel] / len(conversion_paths) if conversion_paths else 0,
+                conversion_probability=(
+                    frequencies[channel] / len(conversion_paths) if conversion_paths else 0
+                ),
                 avg_position=1.0,  # Always last
                 frequency=frequencies[channel],
             )
@@ -584,7 +598,7 @@ class SimpleAttribution:
     @staticmethod
     def first_touch(
         conversion_paths: list[list[str]],
-        conversion_values: Optional[list[float]] = None,
+        conversion_values: list[float] | None = None,
     ) -> AttributionReport:
         """100% credit to first touchpoint."""
 
@@ -594,7 +608,7 @@ class SimpleAttribution:
         attributions = defaultdict(float)
         frequencies = defaultdict(int)
 
-        for path, value in zip(conversion_paths, conversion_values):
+        for path, value in zip(conversion_paths, conversion_values, strict=False):
             if path:
                 first_channel = path[0]
                 attributions[first_channel] += value
@@ -607,7 +621,9 @@ class SimpleAttribution:
                 channel=channel,
                 attribution_value=value / total_value if total_value > 0 else 0,
                 absolute_value=value,
-                conversion_probability=frequencies[channel] / len(conversion_paths) if conversion_paths else 0,
+                conversion_probability=(
+                    frequencies[channel] / len(conversion_paths) if conversion_paths else 0
+                ),
                 avg_position=0.0,  # Always first
                 frequency=frequencies[channel],
             )
@@ -626,7 +642,7 @@ class SimpleAttribution:
     @staticmethod
     def linear(
         conversion_paths: list[list[str]],
-        conversion_values: Optional[list[float]] = None,
+        conversion_values: list[float] | None = None,
     ) -> AttributionReport:
         """Equal credit to all touchpoints."""
 
@@ -637,7 +653,7 @@ class SimpleAttribution:
         frequencies = defaultdict(int)
         positions = defaultdict(list)
 
-        for path, value in zip(conversion_paths, conversion_values):
+        for path, value in zip(conversion_paths, conversion_values, strict=False):
             if path:
                 credit = value / len(path)
                 for pos, channel in enumerate(path):
@@ -652,7 +668,9 @@ class SimpleAttribution:
                 channel=channel,
                 attribution_value=value / total_value if total_value > 0 else 0,
                 absolute_value=value,
-                conversion_probability=frequencies[channel] / len(conversion_paths) if conversion_paths else 0,
+                conversion_probability=(
+                    frequencies[channel] / len(conversion_paths) if conversion_paths else 0
+                ),
                 avg_position=np.mean(positions[channel]) if positions[channel] else 0,
                 frequency=frequencies[channel],
             )
@@ -671,8 +689,8 @@ class SimpleAttribution:
 
 def compare_attribution_models(
     conversion_paths: list[list[str]],
-    conversion_values: Optional[list[float]] = None,
-    non_conversion_paths: Optional[list[list[str]]] = None,
+    conversion_values: list[float] | None = None,
+    non_conversion_paths: list[list[str]] | None = None,
 ) -> pd.DataFrame:
     """
     Compare different attribution models.
@@ -701,7 +719,9 @@ def compare_attribution_models(
     # Markov (if we have non-conversion paths)
     if non_conversion_paths:
         markov = MarkovAttribution()
-        results["markov"] = markov.calculate(conversion_paths, non_conversion_paths, conversion_values)
+        results["markov"] = markov.calculate(
+            conversion_paths, non_conversion_paths, conversion_values
+        )
 
     # Build comparison DataFrame
     all_channels = set()
@@ -722,4 +742,3 @@ def compare_attribution_models(
         comparison_data.append(row)
 
     return pd.DataFrame(comparison_data)
-

@@ -1,11 +1,9 @@
 """X-Learner implementation for uplift modeling."""
 
 import numpy as np
-from sklearn.base import clone
 
-from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 
 logger = get_logger(__name__)
 
@@ -45,9 +43,11 @@ class XLearner(MetaLearner):
         """Get propensity score model."""
         if self.propensity_learner == "logistic":
             from sklearn.linear_model import LogisticRegression
+
             return LogisticRegression(max_iter=1000)
 
         from sklearn.ensemble import GradientBoostingClassifier
+
         return GradientBoostingClassifier(n_estimators=50)
 
     def fit(
@@ -152,4 +152,3 @@ class XLearner(MetaLearner):
         upper = predictions + 1.96 * uncertainty
 
         return predictions, lower, upper
-

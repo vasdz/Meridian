@@ -53,9 +53,7 @@ class TestUpliftEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_predict_uplift_empty_customers(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_predict_uplift_empty_customers(self, client: AsyncClient, auth_headers):
         """Test validation of empty customer list."""
         response = await client.post(
             "/v1/uplift/predict",
@@ -66,9 +64,7 @@ class TestUpliftEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_predict_uplift_invalid_customer_id(
-        self, client: AsyncClient, auth_headers
-    ):
+    async def test_predict_uplift_invalid_customer_id(self, client: AsyncClient, auth_headers):
         """Test validation of invalid customer ID format."""
         response = await client.post(
             "/v1/uplift/predict",
@@ -77,4 +73,3 @@ class TestUpliftEndpoint:
         )
 
         assert response.status_code == 422
-

@@ -1,12 +1,11 @@
 """DeepAR forecasting model wrapper."""
 
-from typing import Optional, Any
+from typing import Any
 
 import numpy as np
 
-from meridian.infrastructure.ml.base import BaseMLModel
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.base import BaseMLModel
 
 logger = get_logger(__name__)
 
@@ -44,7 +43,6 @@ class DeepAR(BaseMLModel):
 
         try:
             from gluonts.torch.model.deepar import DeepAREstimator
-            from gluonts.dataset.pandas import PandasDataset
 
             self._estimator = DeepAREstimator(
                 prediction_length=self.prediction_length,
@@ -70,7 +68,7 @@ class DeepAR(BaseMLModel):
     def forecast(
         self,
         horizon: int,
-        time_series: Optional[Any] = None,
+        time_series: Any | None = None,
         quantiles: list[float] = None,
     ) -> dict:
         """Generate probabilistic forecasts."""
@@ -81,7 +79,6 @@ class DeepAR(BaseMLModel):
 
         if self._predictor is not None:
             try:
-                from gluonts.dataset.pandas import PandasDataset
 
                 forecasts = list(self._predictor.predict(time_series))
 
@@ -93,9 +90,7 @@ class DeepAR(BaseMLModel):
                 for forecast in forecasts:
                     result["mean"].extend(forecast.mean.tolist())
                     for q in quantiles:
-                        result["quantiles"][str(q)].extend(
-                            forecast.quantile(q).tolist()
-                        )
+                        result["quantiles"][str(q)].extend(forecast.quantile(q).tolist())
 
                 return result
 
@@ -104,14 +99,12 @@ class DeepAR(BaseMLModel):
 
         # Mock forecast
         import random
+
         mean = [random.uniform(80, 120) for _ in range(horizon)]
 
         return {
             "mean": mean,
-            "quantiles": {
-                str(q): [m * (0.8 + 0.4 * q) for m in mean]
-                for q in quantiles
-            },
+            "quantiles": {str(q): [m * (0.8 + 0.4 * q) for m in mean] for q in quantiles},
         }
 
     def predict_with_uncertainty(
@@ -124,4 +117,3 @@ class DeepAR(BaseMLModel):
         lower = np.array(result["quantiles"]["0.1"])
         upper = np.array(result["quantiles"]["0.9"])
         return mean, lower, upper
-

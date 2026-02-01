@@ -1,11 +1,9 @@
 """Kafka producer for event streaming."""
 
 import json
-from typing import Optional
 
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -13,7 +11,7 @@ logger = get_logger(__name__)
 class KafkaProducer:
     """Kafka producer for publishing events."""
 
-    def __init__(self, bootstrap_servers: Optional[str] = None):
+    def __init__(self, bootstrap_servers: str | None = None):
         self.bootstrap_servers = bootstrap_servers or settings.kafka_bootstrap_servers
         self._producer = None
 
@@ -23,10 +21,12 @@ class KafkaProducer:
             try:
                 from confluent_kafka import Producer
 
-                self._producer = Producer({
-                    "bootstrap.servers": self.bootstrap_servers,
-                    "acks": "all",
-                })
+                self._producer = Producer(
+                    {
+                        "bootstrap.servers": self.bootstrap_servers,
+                        "acks": "all",
+                    }
+                )
                 logger.info("Kafka producer initialized")
             except ImportError:
                 logger.warning("confluent-kafka not installed")
@@ -37,7 +37,7 @@ class KafkaProducer:
         topic: str,
         key: str,
         value: dict,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
     ) -> bool:
         """Send message to Kafka topic."""
         producer = self._get_producer()
@@ -71,4 +71,3 @@ class KafkaProducer:
         if self._producer:
             self._producer.flush()
             logger.info("Kafka producer closed")
-

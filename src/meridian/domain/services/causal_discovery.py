@@ -12,15 +12,15 @@ Note: For production use, consider integrating with specialized libraries:
 - DoWhy for validation
 """
 
+from dataclasses import dataclass
+from itertools import combinations
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 from scipy import stats
-from dataclasses import dataclass, field
-from typing import Optional, Literal
-from itertools import combinations
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -51,7 +51,7 @@ class CausalGraph:
 
     nodes: list[str]
     edges: list[CausalEdge]
-    adjacency_matrix: Optional[np.ndarray] = None
+    adjacency_matrix: np.ndarray | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -71,10 +71,7 @@ class CausalGraph:
 
     def has_edge(self, source: str, target: str) -> bool:
         """Check if edge exists."""
-        return any(
-            e.source == source and e.target == target
-            for e in self.edges
-        )
+        return any(e.source == source and e.target == target for e in self.edges)
 
     def to_adjacency_matrix(self) -> np.ndarray:
         """Convert to adjacency matrix."""
@@ -189,9 +186,10 @@ class ConditionalIndependenceTest:
         Returns:
             Tuple of (g_squared_statistic, p_value)
         """
+
         # Discretize continuous variables
         def discretize(series):
-            if series.dtype in ['object', 'category', 'bool']:
+            if series.dtype in ["object", "category", "bool"]:
                 return series
             return pd.cut(series, bins=n_bins, labels=False)
 
@@ -201,7 +199,9 @@ class ConditionalIndependenceTest:
         if len(z) == 0:
             # Marginal independence
             contingency = pd.crosstab(x_disc, y_disc)
-            g_stat, p_val, dof, expected = stats.chi2_contingency(contingency, lambda_="log-likelihood")
+            g_stat, p_val, dof, expected = stats.chi2_contingency(
+                contingency, lambda_="log-likelihood"
+            )
             return g_stat, p_val
 
         # Conditional independence: stratify by z
@@ -216,12 +216,11 @@ class ConditionalIndependenceTest:
                 continue
 
             try:
-                contingency = pd.crosstab(
-                    discretize(group[x]),
-                    discretize(group[y])
-                )
+                contingency = pd.crosstab(discretize(group[x]), discretize(group[y]))
                 if contingency.size > 1:
-                    g_stat, _, dof, _ = stats.chi2_contingency(contingency, lambda_="log-likelihood")
+                    g_stat, _, dof, _ = stats.chi2_contingency(
+                        contingency, lambda_="log-likelihood"
+                    )
                     g_total += g_stat
                     dof_total += dof
             except Exception:
@@ -271,8 +270,8 @@ class PCAlgorithm:
     def fit(
         self,
         data: pd.DataFrame,
-        forbidden_edges: Optional[list[tuple[str, str]]] = None,
-        required_edges: Optional[list[tuple[str, str]]] = None,
+        forbidden_edges: list[tuple[str, str]] | None = None,
+        required_edges: list[tuple[str, str]] | None = None,
     ) -> CausalGraph:
         """
         Learn causal graph from data.
@@ -345,7 +344,9 @@ class PCAlgorithm:
 
                 # Get adjacent nodes (potential conditioning sets)
                 neighbors_x = [
-                    n for (a, b), e in edges.items() if e
+                    n
+                    for (a, b), e in edges.items()
+                    if e
                     for n in ([b] if a == x else [a] if b == x else [])
                     if n != y
                 ]
@@ -403,7 +404,7 @@ class PCAlgorithm:
         for z in nodes:
             neighbors = list(adjacent[z])
             for i, x in enumerate(neighbors):
-                for y in neighbors[i+1:]:
+                for y in neighbors[i + 1 :]:
                     if y not in adjacent[x]:
                         # Check if z is in the separation set
                         sep_set = self._separation_sets.get((x, y), [])
@@ -443,30 +444,36 @@ class PCAlgorithm:
             processed.add((x, y))
 
             if y in directed.get(x, {}):
-                edges.append(CausalEdge(
-                    source=x,
-                    target=y,
-                    edge_type="directed",
-                    strength=strength,
-                    confidence=conf,
-                ))
+                edges.append(
+                    CausalEdge(
+                        source=x,
+                        target=y,
+                        edge_type="directed",
+                        strength=strength,
+                        confidence=conf,
+                    )
+                )
             elif x in directed.get(y, {}):
-                edges.append(CausalEdge(
-                    source=y,
-                    target=x,
-                    edge_type="directed",
-                    strength=strength,
-                    confidence=conf,
-                ))
+                edges.append(
+                    CausalEdge(
+                        source=y,
+                        target=x,
+                        edge_type="directed",
+                        strength=strength,
+                        confidence=conf,
+                    )
+                )
             else:
                 # Undirected - keep as is or use heuristics
-                edges.append(CausalEdge(
-                    source=x,
-                    target=y,
-                    edge_type="undirected",
-                    strength=strength,
-                    confidence=conf,
-                ))
+                edges.append(
+                    CausalEdge(
+                        source=x,
+                        target=y,
+                        edge_type="undirected",
+                        strength=strength,
+                        confidence=conf,
+                    )
+                )
 
         return edges
 
@@ -490,9 +497,9 @@ class CausalDiscovery:
     def discover(
         self,
         data: pd.DataFrame,
-        target: Optional[str] = None,
-        forbidden_edges: Optional[list[tuple[str, str]]] = None,
-        required_edges: Optional[list[tuple[str, str]]] = None,
+        target: str | None = None,
+        forbidden_edges: list[tuple[str, str]] | None = None,
+        required_edges: list[tuple[str, str]] | None = None,
     ) -> CausalGraph:
         """
         Discover causal graph from data.
@@ -518,7 +525,7 @@ class CausalDiscovery:
     def _correlation_based(
         self,
         data: pd.DataFrame,
-        target: Optional[str] = None,
+        target: str | None = None,
         threshold: float = 0.3,
     ) -> CausalGraph:
         """Simple correlation-based discovery (for comparison/baseline)."""
@@ -541,13 +548,15 @@ class CausalDiscovery:
                     t_stat = corr * np.sqrt(n - 2) / np.sqrt(1 - corr**2)
                     p_val = 2 * (1 - stats.t.cdf(abs(t_stat), n - 2))
 
-                    edges.append(CausalEdge(
-                        source=x,
-                        target=y,
-                        edge_type="undirected",
-                        strength=abs(corr),
-                        confidence=1 - p_val,
-                    ))
+                    edges.append(
+                        CausalEdge(
+                            source=x,
+                            target=y,
+                            edge_type="undirected",
+                            strength=abs(corr),
+                            confidence=1 - p_val,
+                        )
+                    )
 
         return CausalGraph(nodes=nodes, edges=edges)
 
@@ -583,8 +592,16 @@ class CausalDiscovery:
                 if parent not in expected:
                     false_positives += 1
 
-        precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
-        recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+        precision = (
+            true_positives / (true_positives + false_positives)
+            if (true_positives + false_positives) > 0
+            else 0
+        )
+        recall = (
+            true_positives / (true_positives + false_negatives)
+            if (true_positives + false_negatives) > 0
+            else 0
+        )
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
 
         return {
@@ -595,4 +612,3 @@ class CausalDiscovery:
             "false_positives": false_positives,
             "false_negatives": false_negatives,
         }
-

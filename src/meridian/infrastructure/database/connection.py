@@ -1,19 +1,18 @@
 """Database connection and session management."""
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    AsyncEngine,
-    create_async_engine,
-    async_sessionmaker,
-)
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -80,4 +79,3 @@ async def check_db_connection() -> bool:
     except Exception as e:
         logger.error("Database health check failed", error=str(e))
         return False
-

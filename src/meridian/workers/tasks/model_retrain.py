@@ -1,8 +1,7 @@
 """Model retraining tasks."""
 
-from meridian.workers.celery_app import celery_app
 from meridian.core.logging import get_logger
-
+from meridian.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
 
@@ -42,4 +41,3 @@ def retrain_forecasting_model(self, model_id: str, item_ids: list[str]):
     except Exception as e:
         logger.error("Forecasting retraining failed", error=str(e))
         raise
-

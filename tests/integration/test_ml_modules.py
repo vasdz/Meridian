@@ -11,15 +11,20 @@ class TestDemandForecaster:
     def test_lightgbm_forecaster(self):
         """Test LightGBM-based forecaster."""
         from meridian.infrastructure.ml.forecasting.demand_forecaster import (
-            LightGBMForecaster,
             ForecastConfig,
+            LightGBMForecaster,
         )
 
         # Generate sample time series
         np.random.seed(42)
         n = 100
         timestamps = pd.date_range("2024-01-01", periods=n, freq="D")
-        y = 100 + np.arange(n) * 0.5 + np.sin(np.arange(n) / 7 * 2 * np.pi) * 20 + np.random.randn(n) * 5
+        y = (
+            100
+            + np.arange(n) * 0.5
+            + np.sin(np.arange(n) / 7 * 2 * np.pi) * 20
+            + np.random.randn(n) * 5
+        )
 
         config = ForecastConfig(horizon=14, quantiles=[0.1, 0.5, 0.9])
         model = LightGBMForecaster(config)
@@ -61,8 +66,8 @@ class TestPricingOptimizer:
     def test_elasticity_estimation(self):
         """Test price elasticity estimation."""
         from meridian.infrastructure.ml.pricing.price_optimizer import (
-            PriceElasticityEstimator,
             ElasticityModel,
+            PriceElasticityEstimator,
         )
 
         np.random.seed(42)
@@ -84,8 +89,8 @@ class TestPricingOptimizer:
     def test_price_optimization(self):
         """Test price optimization."""
         from meridian.infrastructure.ml.pricing.price_optimizer import (
-            PriceOptimizer,
             OptimizationObjective,
+            PriceOptimizer,
         )
 
         optimizer = PriceOptimizer(objective=OptimizationObjective.PROFIT)
@@ -130,10 +135,10 @@ class TestMLPipeline:
     def test_pipeline_execution(self):
         """Test basic pipeline execution."""
         from meridian.infrastructure.ml.pipeline import (
-            Pipeline,
             FunctionStep,
-            StepType,
+            Pipeline,
             PipelineStatus,
+            StepType,
         )
 
         # Create simple pipeline
@@ -154,8 +159,8 @@ class TestMLPipeline:
     def test_pipeline_with_validation(self):
         """Test pipeline with validation step."""
         from meridian.infrastructure.ml.pipeline import (
-            Pipeline,
             DataValidationStep,
+            Pipeline,
         )
 
         def check_not_empty(df):
@@ -182,16 +187,20 @@ class TestMonitoring:
         np.random.seed(42)
 
         # Reference data
-        reference = pd.DataFrame({
-            "feature_1": np.random.normal(0, 1, 1000),
-            "feature_2": np.random.normal(10, 2, 1000),
-        })
+        reference = pd.DataFrame(
+            {
+                "feature_1": np.random.normal(0, 1, 1000),
+                "feature_2": np.random.normal(10, 2, 1000),
+            }
+        )
 
         # Current data with drift
-        current = pd.DataFrame({
-            "feature_1": np.random.normal(0.5, 1, 500),  # Shifted mean
-            "feature_2": np.random.normal(10, 2, 500),   # No drift
-        })
+        current = pd.DataFrame(
+            {
+                "feature_1": np.random.normal(0.5, 1, 500),  # Shifted mean
+                "feature_2": np.random.normal(10, 2, 500),  # No drift
+            }
+        )
 
         detector = DriftDetector(drift_threshold=0.1, method="psi")
         detector.set_reference(reference)
@@ -306,4 +315,3 @@ class TestAttribution:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

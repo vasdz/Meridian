@@ -1,10 +1,7 @@
 """Feast feature store adapter."""
 
-from typing import Optional
-
 from meridian.application.interfaces.feature_store import FeatureStoreInterface
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -21,6 +18,7 @@ class FeastAdapter(FeatureStoreInterface):
         if self._store is None:
             try:
                 from feast import FeatureStore
+
                 self._store = FeatureStore(repo_path=self.repo_path)
             except ImportError:
                 logger.warning("Feast not installed")
@@ -37,7 +35,7 @@ class FeastAdapter(FeatureStoreInterface):
 
         if store is None:
             # Mock response
-            return {eid: {fn: 0.0 for fn in feature_names} for eid in entity_ids}
+            return {eid: dict.fromkeys(feature_names, 0.0) for eid in entity_ids}
 
         try:
             entity_rows = [{entity_type: eid} for eid in entity_ids]
@@ -49,10 +47,7 @@ class FeastAdapter(FeatureStoreInterface):
 
             result = {}
             for i, eid in enumerate(entity_ids):
-                result[eid] = {
-                    fn: features[fn][i]
-                    for fn in feature_names
-                }
+                result[eid] = {fn: features[fn][i] for fn in feature_names}
 
             return result
 
@@ -94,4 +89,3 @@ class FeastAdapter(FeatureStoreInterface):
 
         except Exception as e:
             logger.error("Failed to materialize features", error=str(e))
-

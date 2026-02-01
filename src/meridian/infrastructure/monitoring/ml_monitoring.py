@@ -11,24 +11,24 @@ This module provides production-ready monitoring capabilities:
 Designed for hyperscale ML operations.
 """
 
-import numpy as np
-import pandas as pd
-from abc import ABC, abstractmethod
+import hashlib
+from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional, Any, Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from collections import deque
-import hashlib
+
+import numpy as np
+import pandas as pd
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -36,6 +36,7 @@ class AlertSeverity(Enum):
 
 class DriftType(Enum):
     """Type of drift detection."""
+
     DATA = "data"
     FEATURE = "feature"
     PREDICTION = "prediction"
@@ -44,6 +45,7 @@ class DriftType(Enum):
 
 class MetricType(Enum):
     """Type of monitored metric."""
+
     ACCURACY = "accuracy"
     LATENCY = "latency"
     THROUGHPUT = "throughput"
@@ -64,10 +66,10 @@ class Alert:
     threshold: float
     message: str
 
-    model_id: Optional[str] = None
+    model_id: str | None = None
     acknowledged: bool = False
-    acknowledged_by: Optional[str] = None
-    acknowledged_at: Optional[datetime] = None
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -88,7 +90,7 @@ class DriftResult:
     """Result of drift detection."""
 
     drift_type: DriftType
-    feature_name: Optional[str]
+    feature_name: str | None
     drift_score: float
     is_drifted: bool
     threshold: float
@@ -130,12 +132,12 @@ class ModelMetrics:
     p99_latency_ms: float = 0.0
 
     # Accuracy metrics (if ground truth available)
-    accuracy: Optional[float] = None
-    precision: Optional[float] = None
-    recall: Optional[float] = None
-    f1_score: Optional[float] = None
-    rmse: Optional[float] = None
-    mape: Optional[float] = None
+    accuracy: float | None = None
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
+    rmse: float | None = None
+    mape: float | None = None
 
     # Error metrics
     error_count: int = 0
@@ -170,7 +172,7 @@ class DriftDetector:
 
     def __init__(
         self,
-        reference_data: Optional[pd.DataFrame] = None,
+        reference_data: pd.DataFrame | None = None,
         drift_threshold: float = 0.1,
         method: str = "psi",
     ):
@@ -192,7 +194,7 @@ class DriftDetector:
             return
 
         for col in self.reference_data.columns:
-            if self.reference_data[col].dtype in ['int64', 'float64']:
+            if self.reference_data[col].dtype in ["int64", "float64"]:
                 self._reference_stats[col] = {
                     "mean": self.reference_data[col].mean(),
                     "std": self.reference_data[col].std(),
@@ -212,7 +214,7 @@ class DriftDetector:
     def detect_drift(
         self,
         current_data: pd.DataFrame,
-        features: Optional[list[str]] = None,
+        features: list[str] | None = None,
     ) -> list[DriftResult]:
         """
         Detect drift in current data compared to reference.
@@ -234,7 +236,7 @@ class DriftDetector:
             if feature not in self.reference_data.columns:
                 continue
 
-            if self.reference_data[feature].dtype in ['int64', 'float64']:
+            if self.reference_data[feature].dtype in ["int64", "float64"]:
                 result = self._detect_numeric_drift(feature, current_data[feature])
             else:
                 result = self._detect_categorical_drift(feature, current_data[feature])
@@ -350,6 +352,7 @@ class DriftDetector:
     ) -> float:
         """Calculate Kolmogorov-Smirnov statistic."""
         from scipy import stats
+
         statistic, _ = stats.ks_2samp(reference, current)
         return float(statistic)
 
@@ -360,6 +363,7 @@ class DriftDetector:
     ) -> float:
         """Calculate Wasserstein (Earth Mover's) distance."""
         from scipy import stats
+
         distance = stats.wasserstein_distance(reference, current)
 
         # Normalize by reference std
@@ -397,8 +401,8 @@ class PredictionMonitor:
         self._timestamps = deque(maxlen=window_size)
 
         # Reference statistics (from training)
-        self._reference_mean: Optional[float] = None
-        self._reference_std: Optional[float] = None
+        self._reference_mean: float | None = None
+        self._reference_std: float | None = None
 
     def set_reference_stats(self, mean: float, std: float) -> None:
         """Set reference prediction statistics from training."""
@@ -410,7 +414,7 @@ class PredictionMonitor:
         prediction: float,
         latency_ms: float,
         is_error: bool = False,
-    ) -> Optional[Alert]:
+    ) -> Alert | None:
         """
         Record a prediction and check for anomalies.
 
@@ -432,7 +436,7 @@ class PredictionMonitor:
         self,
         prediction: float,
         latency_ms: float,
-    ) -> Optional[Alert]:
+    ) -> Alert | None:
         """Check for anomalous predictions or latency."""
         # Check prediction anomaly
         if self._reference_mean is not None and self._reference_std is not None:
@@ -528,7 +532,7 @@ class SLAMonitor:
         model_id: str,
         latency_sla_ms: float = 100.0,
         error_rate_sla: float = 0.01,
-        accuracy_sla: Optional[float] = None,
+        accuracy_sla: float | None = None,
     ):
         self.model_id = model_id
         self.latency_sla_ms = latency_sla_ms
@@ -547,8 +551,8 @@ class SLAMonitor:
         self,
         latency_ms: float,
         is_error: bool = False,
-        accuracy: Optional[float] = None,
-    ) -> Optional[Alert]:
+        accuracy: float | None = None,
+    ) -> Alert | None:
         """Record a request and check SLA compliance."""
         self._request_count += 1
 
@@ -606,7 +610,9 @@ class SLAMonitor:
     ) -> Alert:
         """Create an SLA alert."""
         return Alert(
-            alert_id=hashlib.md5(f"{self.model_id}_{datetime.now().isoformat()}".encode()).hexdigest()[:12],
+            alert_id=hashlib.md5(
+                f"{self.model_id}_{datetime.now().isoformat()}".encode()
+            ).hexdigest()[:12],
             timestamp=datetime.now(),
             severity=severity,
             metric_name=metric,
@@ -629,9 +635,15 @@ class SLAMonitor:
             "error_count": self._error_count,
             "error_rate": self._error_count / self._request_count if self._request_count > 0 else 0,
             "error_rate_sla": self.error_rate_sla,
-            "error_sla_compliance": self._error_count / self._request_count <= self.error_rate_sla if self._request_count > 0 else True,
+            "error_sla_compliance": (
+                self._error_count / self._request_count <= self.error_rate_sla
+                if self._request_count > 0
+                else True
+            ),
             "latency_violations": self._latency_violations,
-            "latency_violation_rate": self._latency_violations / self._request_count if self._request_count > 0 else 0,
+            "latency_violation_rate": (
+                self._latency_violations / self._request_count if self._request_count > 0 else 0
+            ),
             "latency_sla_ms": self.latency_sla_ms,
             "total_alerts": len(self._alerts),
         }
@@ -699,9 +711,11 @@ class AlertManager:
             if existing.timestamp < cutoff:
                 break
 
-            if (existing.model_id == alert.model_id and
-                existing.metric_name == alert.metric_name and
-                existing.severity == alert.severity):
+            if (
+                existing.model_id == alert.model_id
+                and existing.metric_name == alert.metric_name
+                and existing.severity == alert.severity
+            ):
                 return True
 
         return False
@@ -719,8 +733,8 @@ class AlertManager:
 
     def get_active_alerts(
         self,
-        severity: Optional[AlertSeverity] = None,
-        model_id: Optional[str] = None,
+        severity: AlertSeverity | None = None,
+        model_id: str | None = None,
     ) -> list[Alert]:
         """Get active (unacknowledged) alerts."""
         alerts = [a for a in self._alerts if not a.acknowledged]
@@ -773,7 +787,7 @@ class ModelMonitoringService:
         self.sla_monitor = SLAMonitor(model_id, latency_sla_ms=latency_sla_ms)
         self.alert_manager = AlertManager()
 
-    def set_reference_data(self, data: pd.DataFrame, predictions: Optional[np.ndarray] = None) -> None:
+    def set_reference_data(self, data: pd.DataFrame, predictions: np.ndarray | None = None) -> None:
         """Set reference data for monitoring."""
         self.drift_detector.set_reference(data)
 
@@ -816,7 +830,9 @@ class ModelMonitoringService:
         for result in results:
             if result.is_drifted:
                 alert = Alert(
-                    alert_id=hashlib.md5(f"{self.model_id}_drift_{result.feature_name}_{datetime.now().isoformat()}".encode()).hexdigest()[:12],
+                    alert_id=hashlib.md5(
+                        f"{self.model_id}_drift_{result.feature_name}_{datetime.now().isoformat()}".encode()
+                    ).hexdigest()[:12],
                     timestamp=datetime.now(),
                     severity=AlertSeverity.WARNING,
                     metric_name="feature_drift",
@@ -850,4 +866,3 @@ class ModelMonitoringService:
             "sla_compliance": sla_report,
             "alerts": alert_summary,
         }
-

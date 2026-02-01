@@ -1,11 +1,9 @@
 """Price elasticity estimation model."""
 
 import numpy as np
-from typing import Optional
 
-from meridian.infrastructure.ml.base import BaseMLModel
 from meridian.core.logging import get_logger
-
+from meridian.infrastructure.ml.base import BaseMLModel
 
 logger = get_logger(__name__)
 
@@ -28,7 +26,7 @@ class ElasticityModel(BaseMLModel):
         self,
         prices: np.ndarray,
         quantities: np.ndarray,
-        X_controls: Optional[np.ndarray] = None,
+        X_controls: np.ndarray | None = None,
     ) -> None:
         """
         Fit elasticity model.
@@ -81,4 +79,3 @@ class ElasticityModel(BaseMLModel):
         elasticity = self.get_elasticity()
         price_change = (new_price - current_price) / current_price
         return elasticity * price_change
-

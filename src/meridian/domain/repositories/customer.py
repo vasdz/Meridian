@@ -1,7 +1,6 @@
 """Customer repository interface."""
 
 from abc import abstractmethod
-from typing import Optional
 
 from meridian.domain.models.customer import Customer
 from meridian.domain.repositories.base import AbstractRepository
@@ -11,7 +10,7 @@ class CustomerRepository(AbstractRepository[Customer]):
     """Customer repository interface."""
 
     @abstractmethod
-    async def get_by_external_id(self, external_id: str) -> Optional[Customer]:
+    async def get_by_external_id(self, external_id: str) -> Customer | None:
         """Get customer by external ID."""
         pass
 
@@ -41,4 +40,3 @@ class CustomerRepository(AbstractRepository[Customer]):
     ) -> bool:
         """Update customer segment."""
         pass
-

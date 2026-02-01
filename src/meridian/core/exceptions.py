@@ -1,6 +1,6 @@
 """Domain exceptions."""
 
-from typing import Any, Optional
+from typing import Any
 
 
 class MeridianBaseError(Exception):
@@ -12,7 +12,7 @@ class MeridianBaseError(Exception):
     def __init__(
         self,
         message: str,
-        details: Optional[dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         self.message = message
         self.details = details or {}
@@ -108,4 +108,3 @@ class ExternalServiceError(MeridianBaseError):
 
     error_code = "EXTERNAL_SERVICE_ERROR"
     status_code = 502
-

@@ -1,9 +1,8 @@
 """SQL Transaction repository implementation."""
 
 from datetime import date
-from typing import Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from meridian.domain.models.transaction import Transaction
@@ -34,14 +33,12 @@ class SQLTransactionRepository(TransactionRepository):
             created_at=model.created_at,
         )
 
-    async def get(self, id: str) -> Optional[Transaction]:
+    async def get(self, id: str) -> Transaction | None:
         model = await self.session.get(TransactionModel, id)
         return self._to_domain(model) if model else None
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Transaction]:
-        result = await self.session.execute(
-            select(TransactionModel).limit(limit).offset(offset)
-        )
+        result = await self.session.execute(select(TransactionModel).limit(limit).offset(offset))
         return [self._to_domain(m) for m in result.scalars().all()]
 
     async def add(self, entity: Transaction) -> Transaction:
@@ -111,4 +108,3 @@ class SQLTransactionRepository(TransactionRepository):
             "count": int(row.count or 0),
             "avg_amount": float(row.avg_amount or 0),
         }
-

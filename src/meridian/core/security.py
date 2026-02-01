@@ -1,14 +1,12 @@
 """Security utilities - encryption, hashing, secrets."""
 
-import secrets
 import hashlib
-from typing import Optional
+import secrets
 
 from cryptography.fernet import Fernet
 from passlib.context import CryptContext
 
 from meridian.core.config import settings
-
 
 # Password hashing context - using argon2 (more modern and secure than bcrypt)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -17,7 +15,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 class Encryptor:
     """Symmetric encryption using Fernet."""
 
-    def __init__(self, key: Optional[bytes] = None):
+    def __init__(self, key: bytes | None = None):
         if key is None:
             # Derive key from secret_key
             key = self._derive_key(settings.secret_key)
@@ -26,11 +24,12 @@ class Encryptor:
     def _derive_key(self, secret: str) -> bytes:
         """Derive Fernet key from secret."""
         import base64
+
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
         # Use configurable salt from settings for enterprise deployments
-        salt = settings.encryption_salt.encode()[:32].ljust(16, b'\x00')
+        salt = settings.encryption_salt.encode()[:32].ljust(16, b"\x00")
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -80,4 +79,3 @@ def constant_time_compare(a: str, b: str) -> bool:
 def generate_token(length: int = 32) -> str:
     """Generate a random token."""
     return secrets.token_urlsafe(length)
-

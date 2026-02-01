@@ -1,10 +1,8 @@
 """Forecast demand use case."""
 
 from datetime import date, timedelta
-from typing import Optional
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -47,6 +45,7 @@ class ForecastDemandUseCase:
         today = date.today()
 
         import random
+
         for item in items:
             for day in range(horizon_days):
                 forecast_date = today + timedelta(days=day + 1)
@@ -60,12 +59,8 @@ class ForecastDemandUseCase:
                     "store_id": item.get("store_id"),
                     "date": forecast_date.isoformat(),
                     "point_forecast": base,
-                    "quantiles": {
-                        str(q): base + (q - 0.5) * variance * 2
-                        for q in quantiles
-                    },
+                    "quantiles": {str(q): base + (q - 0.5) * variance * 2 for q in quantiles},
                 }
                 forecasts.append(forecast)
 
         return forecasts
-

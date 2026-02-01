@@ -1,2 +1,1 @@
 """Response schemas package."""
-

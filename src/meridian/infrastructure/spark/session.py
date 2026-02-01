@@ -1,10 +1,7 @@
 """Spark session builder."""
 
-from typing import Optional
-
 from meridian.core.config import settings
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -18,8 +15,8 @@ class SparkSessionBuilder:
 
     def build(
         self,
-        master: Optional[str] = None,
-        config: Optional[dict] = None,
+        master: str | None = None,
+        config: dict | None = None,
     ):
         """Build and return SparkSession."""
         try:
@@ -27,11 +24,7 @@ class SparkSessionBuilder:
 
             master = master or settings.spark_master
 
-            builder = (
-                SparkSession.builder
-                .appName(self.app_name)
-                .master(master)
-            )
+            builder = SparkSession.builder.appName(self.app_name).master(master)
 
             # Apply configurations
             default_config = {
@@ -76,4 +69,3 @@ spark_builder = SparkSessionBuilder()
 def get_spark():
     """Get SparkSession."""
     return spark_builder.get_or_create()
-

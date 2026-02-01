@@ -12,21 +12,21 @@ Metrics:
 - Lift metrics
 """
 
-from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
-from meridian.infrastructure.ml.uplift.t_learner import TLearner
-from meridian.infrastructure.ml.uplift.s_learner import SLearner
-from meridian.infrastructure.ml.uplift.x_learner import XLearner
 from meridian.infrastructure.ml.uplift.causal_forest import CausalForest
+from meridian.infrastructure.ml.uplift.meta_learner import MetaLearner
 from meridian.infrastructure.ml.uplift.metrics import (
     UpliftMetrics,
     calculate_auuc,
+    calculate_lift_at_k,
     calculate_qini_coefficient,
     calculate_qini_curve,
     calculate_uplift_curve,
-    calculate_lift_at_k,
     evaluate_uplift_model,
     plot_uplift_curves,
 )
+from meridian.infrastructure.ml.uplift.s_learner import SLearner
+from meridian.infrastructure.ml.uplift.t_learner import TLearner
+from meridian.infrastructure.ml.uplift.x_learner import XLearner
 
 __all__ = [
     # Models
@@ -45,5 +45,3 @@ __all__ = [
     "evaluate_uplift_model",
     "plot_uplift_curves",
 ]
-
-

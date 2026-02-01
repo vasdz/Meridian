@@ -10,22 +10,23 @@ This module provides enterprise-level demand forecasting capabilities:
 Designed for hyperscale retail operations.
 """
 
-import numpy as np
-import pandas as pd
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Literal, Any
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
+
+import numpy as np
+import pandas as pd
 
 from meridian.core.logging import get_logger
-
 
 logger = get_logger(__name__)
 
 
 class ForecastGranularity(Enum):
     """Time granularity for forecasting."""
+
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -34,6 +35,7 @@ class ForecastGranularity(Enum):
 
 class AggregationLevel(Enum):
     """Hierarchical aggregation levels."""
+
     TOTAL = "total"
     REGION = "region"
     STORE = "store"
@@ -104,8 +106,8 @@ class ForecastResult:
 
     # Metadata
     model_used: str
-    feature_importance: Optional[dict[str, float]] = None
-    metrics: Optional[dict[str, float]] = None
+    feature_importance: dict[str, float] | None = None
+    metrics: dict[str, float] | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -116,8 +118,16 @@ class ForecastResult:
                 {
                     "timestamp": ts.isoformat(),
                     "point_forecast": float(self.point_forecast[i]),
-                    "lower_90": float(self.prediction_intervals.get(0.9, (self.point_forecast, self.point_forecast))[0][i]),
-                    "upper_90": float(self.prediction_intervals.get(0.9, (self.point_forecast, self.point_forecast))[1][i]),
+                    "lower_90": float(
+                        self.prediction_intervals.get(
+                            0.9, (self.point_forecast, self.point_forecast)
+                        )[0][i]
+                    ),
+                    "upper_90": float(
+                        self.prediction_intervals.get(
+                            0.9, (self.point_forecast, self.point_forecast)
+                        )[1][i]
+                    ),
                 }
                 for i, ts in enumerate(self.prediction_timestamps)
             ],
@@ -127,10 +137,12 @@ class ForecastResult:
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to DataFrame for analysis."""
-        df = pd.DataFrame({
-            "timestamp": self.prediction_timestamps,
-            "point_forecast": self.point_forecast,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": self.prediction_timestamps,
+                "point_forecast": self.point_forecast,
+            }
+        )
 
         for quantile, values in self.quantile_forecasts.items():
             df[f"q{int(quantile*100)}"] = values
@@ -151,7 +163,7 @@ class BaseForecastModel(ABC):
         self,
         y: np.ndarray,
         timestamps: np.ndarray,
-        X: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
     ) -> "BaseForecastModel":
         """Fit the forecasting model."""
         pass
@@ -160,7 +172,7 @@ class BaseForecastModel(ABC):
     def predict(
         self,
         horizon: int,
-        X_future: Optional[np.ndarray] = None,
+        X_future: np.ndarray | None = None,
     ) -> tuple[np.ndarray, dict[float, np.ndarray]]:
         """Generate point and quantile forecasts."""
         pass
@@ -173,7 +185,7 @@ class BaseForecastModel(ABC):
     def _create_features(
         self,
         timestamps: np.ndarray,
-        y: Optional[np.ndarray] = None,
+        y: np.ndarray | None = None,
     ) -> np.ndarray:
         """Create time-based features."""
         features = []
@@ -214,7 +226,7 @@ class BaseForecastModel(ABC):
 
         # Lag features (if y provided)
         if y is not None and len(y) >= len(timestamps):
-            y_aligned = y[:len(timestamps)]  # Ensure same length
+            y_aligned = y[: len(timestamps)]  # Ensure same length
             for lag in [1, 7, 14, 28]:
                 if len(y_aligned) > lag:
                     lagged = np.zeros(len(timestamps))
@@ -226,7 +238,9 @@ class BaseForecastModel(ABC):
             for window in [7, 14, 28]:
                 if len(y_aligned) > window:
                     rolling_mean = pd.Series(y_aligned).rolling(window, min_periods=1).mean().values
-                    rolling_std = pd.Series(y_aligned).rolling(window, min_periods=1).std().fillna(0).values
+                    rolling_std = (
+                        pd.Series(y_aligned).rolling(window, min_periods=1).std().fillna(0).values
+                    )
                     features.extend([rolling_mean, rolling_std])
                     feature_names.extend([f"rolling_mean_{window}", f"rolling_std_{window}"])
 
@@ -240,14 +254,14 @@ class LightGBMForecaster(BaseForecastModel):
     def __init__(self, config: ForecastConfig):
         super().__init__(config)
         self._models: dict[float, Any] = {}  # quantile -> model
-        self._last_values: Optional[np.ndarray] = None
-        self._last_timestamps: Optional[np.ndarray] = None
+        self._last_values: np.ndarray | None = None
+        self._last_timestamps: np.ndarray | None = None
 
     def fit(
         self,
         y: np.ndarray,
         timestamps: np.ndarray,
-        X: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
     ) -> "LightGBMForecaster":
         """Fit LightGBM models for each quantile."""
         from sklearn.ensemble import GradientBoostingRegressor
@@ -302,7 +316,7 @@ class LightGBMForecaster(BaseForecastModel):
     def predict(
         self,
         horizon: int,
-        X_future: Optional[np.ndarray] = None,
+        X_future: np.ndarray | None = None,
     ) -> tuple[np.ndarray, dict[float, np.ndarray]]:
         """Generate forecasts."""
         if not self._is_fitted:
@@ -321,9 +335,9 @@ class LightGBMForecaster(BaseForecastModel):
         y_extended = self._last_values.copy()
         predictions = {q: [] for q in self.config.quantiles}
 
-        for i, ts in enumerate(future_timestamps):
+        for i, _ts in enumerate(future_timestamps):
             # Create features for all timestamps including history and future so far
-            all_timestamps = np.append(self._last_timestamps, future_timestamps[:i+1])
+            all_timestamps = np.append(self._last_timestamps, future_timestamps[: i + 1])
 
             # y_extended needs to match all_timestamps length
             # At iteration i, all_timestamps has len(_last_timestamps) + i + 1 elements
@@ -337,12 +351,12 @@ class LightGBMForecaster(BaseForecastModel):
                     padding = np.zeros((X_time.shape[0], self._n_features - X_time.shape[1]))
                     X_time = np.hstack([X_time, padding])
                 else:
-                    X_time = X_time[:, :self._n_features]
+                    X_time = X_time[:, : self._n_features]
 
             X_current = X_time[-1:, :]
 
             if X_future is not None and i < len(X_future):
-                X_current = np.hstack([X_current, X_future[i:i+1, :]])
+                X_current = np.hstack([X_current, X_future[i : i + 1, :]])
 
             # Predict for each quantile
             for quantile, model in self._models.items():
@@ -354,7 +368,9 @@ class LightGBMForecaster(BaseForecastModel):
 
         # Convert to arrays
         quantile_forecasts = {q: np.array(preds) for q, preds in predictions.items()}
-        point_forecast = quantile_forecasts.get(0.5, np.mean(list(quantile_forecasts.values()), axis=0))
+        point_forecast = quantile_forecasts.get(
+            0.5, np.mean(list(quantile_forecasts.values()), axis=0)
+        )
 
         return point_forecast, quantile_forecasts
 
@@ -368,13 +384,13 @@ class ExponentialSmoothingForecaster(BaseForecastModel):
     def __init__(self, config: ForecastConfig):
         super().__init__(config)
         self._model = None
-        self._residuals: Optional[np.ndarray] = None
+        self._residuals: np.ndarray | None = None
 
     def fit(
         self,
         y: np.ndarray,
         timestamps: np.ndarray,
-        X: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
     ) -> "ExponentialSmoothingForecaster":
         """Fit exponential smoothing model."""
         from scipy.optimize import minimize
@@ -439,10 +455,12 @@ class ExponentialSmoothingForecaster(BaseForecastModel):
 
         # Initialize
         level = np.mean(y[:season_length])
-        trend = (np.mean(y[season_length:2*season_length]) - np.mean(y[:season_length])) / season_length
+        trend = (
+            np.mean(y[season_length : 2 * season_length]) - np.mean(y[:season_length])
+        ) / season_length
         seasonal = np.zeros(season_length)
         for i in range(season_length):
-            seasonal[i] = np.mean(y[i::season_length][:min(4, n//season_length)]) - level
+            seasonal[i] = np.mean(y[i::season_length][: min(4, n // season_length)]) - level
 
         fitted = np.zeros(n)
 
@@ -465,7 +483,7 @@ class ExponentialSmoothingForecaster(BaseForecastModel):
     def predict(
         self,
         horizon: int,
-        X_future: Optional[np.ndarray] = None,
+        X_future: np.ndarray | None = None,
     ) -> tuple[np.ndarray, dict[float, np.ndarray]]:
         """Generate forecasts with prediction intervals."""
         if not self._is_fitted:
@@ -486,10 +504,13 @@ class ExponentialSmoothingForecaster(BaseForecastModel):
         quantile_forecasts = {}
         for q in self.config.quantiles:
             from scipy import stats
+
             z = stats.norm.ppf(q)
             # Widen intervals for longer horizons
             horizon_factor = np.sqrt(1 + np.arange(1, horizon + 1) * 0.1)
-            quantile_forecasts[q] = np.maximum(0, point_forecast + z * residual_std * horizon_factor)
+            quantile_forecasts[q] = np.maximum(
+                0, point_forecast + z * residual_std * horizon_factor
+            )
 
         return point_forecast, quantile_forecasts
 
@@ -503,13 +524,13 @@ class EnsembleForecaster(BaseForecastModel):
     def __init__(self, config: ForecastConfig):
         super().__init__(config)
         self._models: list[BaseForecastModel] = []
-        self._weights: Optional[np.ndarray] = None
+        self._weights: np.ndarray | None = None
 
     def fit(
         self,
         y: np.ndarray,
         timestamps: np.ndarray,
-        X: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
     ) -> "EnsembleForecaster":
         """Fit all models in the ensemble."""
         logger.info("Fitting Ensemble forecaster", n_samples=len(y))
@@ -552,7 +573,7 @@ class EnsembleForecaster(BaseForecastModel):
         self,
         y: np.ndarray,
         timestamps: np.ndarray,
-        X: Optional[np.ndarray],
+        X: np.ndarray | None,
     ) -> np.ndarray:
         """Compute model weights using cross-validation."""
         from sklearn.model_selection import TimeSeriesSplit
@@ -573,7 +594,7 @@ class EnsembleForecaster(BaseForecastModel):
                     model = ModelClass(self.config)
                     model.fit(y_train, ts_train, X_train)
                     pred, _ = model.predict(len(val_idx), X_val)
-                    cv_errors[i] += np.mean((pred[:len(y_val)] - y_val) ** 2)
+                    cv_errors[i] += np.mean((pred[: len(y_val)] - y_val) ** 2)
                 except Exception:
                     cv_errors[i] += 1e10  # Penalty for failed models
 
@@ -587,7 +608,7 @@ class EnsembleForecaster(BaseForecastModel):
     def predict(
         self,
         horizon: int,
-        X_future: Optional[np.ndarray] = None,
+        X_future: np.ndarray | None = None,
     ) -> tuple[np.ndarray, dict[float, np.ndarray]]:
         """Generate ensemble forecasts."""
         if not self._is_fitted:
@@ -611,13 +632,15 @@ class EnsembleForecaster(BaseForecastModel):
 
         # Weighted average
         point_forecasts = np.array(all_point_forecasts)
-        point_forecast = np.average(point_forecasts, axis=0, weights=self._weights[:len(all_point_forecasts)])
+        point_forecast = np.average(
+            point_forecasts, axis=0, weights=self._weights[: len(all_point_forecasts)]
+        )
 
         quantile_forecasts = {}
         for q in self.config.quantiles:
             if all_quantile_forecasts[q]:
                 qf = np.array(all_quantile_forecasts[q])
-                quantile_forecasts[q] = np.average(qf, axis=0, weights=self._weights[:len(qf)])
+                quantile_forecasts[q] = np.average(qf, axis=0, weights=self._weights[: len(qf)])
 
         return np.maximum(0, point_forecast), quantile_forecasts
 
@@ -636,7 +659,7 @@ class ConformalPredictor:
             alpha: Miscoverage rate (1 - coverage). Default 0.1 = 90% coverage.
         """
         self.alpha = alpha
-        self._residuals: Optional[np.ndarray] = None
+        self._residuals: np.ndarray | None = None
 
     def calibrate(
         self,
@@ -684,18 +707,18 @@ class DemandForecaster:
     - Feature engineering
     """
 
-    def __init__(self, config: Optional[ForecastConfig] = None):
+    def __init__(self, config: ForecastConfig | None = None):
         self.config = config or ForecastConfig()
         self._models: dict[str, BaseForecastModel] = {}
-        self._conformal: Optional[ConformalPredictor] = None
+        self._conformal: ConformalPredictor | None = None
 
     def fit(
         self,
         data: pd.DataFrame,
         target_col: str = "demand",
         timestamp_col: str = "date",
-        series_id_col: Optional[str] = "sku_id",
-        feature_cols: Optional[list[str]] = None,
+        series_id_col: str | None = "sku_id",
+        feature_cols: list[str] | None = None,
     ) -> "DemandForecaster":
         """
         Fit forecasting models for all series.
@@ -749,9 +772,9 @@ class DemandForecaster:
 
     def predict(
         self,
-        series_ids: Optional[list[str]] = None,
-        horizon: Optional[int] = None,
-        X_future: Optional[pd.DataFrame] = None,
+        series_ids: list[str] | None = None,
+        horizon: int | None = None,
+        X_future: pd.DataFrame | None = None,
     ) -> list[ForecastResult]:
         """
         Generate forecasts for specified series.
@@ -775,14 +798,18 @@ class DemandForecaster:
                 continue
 
             model = self._models[series_id]
-            X_fut = X_future[X_future["series_id"] == series_id].values if X_future is not None else None
+            X_fut = (
+                X_future[X_future["series_id"] == series_id].values
+                if X_future is not None
+                else None
+            )
 
             try:
                 point_forecast, quantile_forecasts = model.predict(horizon, X_fut)
 
                 # Generate timestamps
                 last_date = datetime.now()  # Would come from training data
-                pred_timestamps = [last_date + timedelta(days=i+1) for i in range(horizon)]
+                pred_timestamps = [last_date + timedelta(days=i + 1) for i in range(horizon)]
 
                 # Build prediction intervals
                 intervals = {}
@@ -834,4 +861,3 @@ class DemandForecaster:
             "mape": mape,
             "wmape": wmape,
         }
-

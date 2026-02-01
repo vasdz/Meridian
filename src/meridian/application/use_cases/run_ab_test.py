@@ -1,12 +1,8 @@
 """Run A/B test use case."""
 
-from typing import Optional
-from datetime import datetime
-
-from meridian.domain.models.experiment import Experiment, ExperimentVariant, ExperimentResults
-from meridian.domain.services.experiment_design import ExperimentDesignService
 from meridian.core.logging import get_logger
-
+from meridian.domain.models.experiment import Experiment, ExperimentResults, ExperimentVariant
+from meridian.domain.services.experiment_design import ExperimentDesignService
 
 logger = get_logger(__name__)
 
@@ -17,7 +13,7 @@ class RunABTestUseCase:
     def __init__(
         self,
         experiment_repository=None,
-        experiment_design_service: Optional[ExperimentDesignService] = None,
+        experiment_design_service: ExperimentDesignService | None = None,
     ):
         self.experiment_repository = experiment_repository
         self.design_service = experiment_design_service or ExperimentDesignService()
@@ -120,7 +116,7 @@ class RunABTestUseCase:
     async def stop_experiment(
         self,
         experiment_id: str,
-        results: Optional[ExperimentResults] = None,
+        results: ExperimentResults | None = None,
     ) -> Experiment:
         """Stop an experiment."""
         if self.experiment_repository:
@@ -141,4 +137,3 @@ class RunABTestUseCase:
         logger.info("Experiment stopped", experiment_id=experiment_id)
 
         return experiment
-
