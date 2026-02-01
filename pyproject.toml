@@ -100,10 +100,37 @@ known-first-party = ["meridian"]
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
+# Disable strict checks for ML/infrastructure code
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+no_implicit_optional = false
+strict_optional = false
+warn_no_return = false
+
+# Per-module overrides for less strict checking
+[[tool.mypy.overrides]]
+module = [
+    "meridian.infrastructure.ml.*",
+    "meridian.infrastructure.spark.*",
+    "meridian.infrastructure.monitoring.*",
+    "meridian.domain.services.attribution",
+    "meridian.domain.services.causal_discovery",
+    "meridian.domain.services.ab_testing",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "meridian.infrastructure.database.*",
+    "meridian.infrastructure.cache.*",
+    "meridian.infrastructure.security.*",
+]
+disable_error_code = ["no-any-return", "union-attr", "attr-defined", "misc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

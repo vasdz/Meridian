@@ -98,7 +98,7 @@ class UpliftCalculator:
         """Segment customers based on CATE thresholds."""
         low_threshold, high_threshold = thresholds
 
-        segments = {
+        segments: dict[str, list[UpliftPrediction]] = {
             "sure_things": [],  # High baseline, low uplift
             "persuadables": [],  # High uplift
             "sleeping_dogs": [],  # Negative uplift

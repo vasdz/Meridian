@@ -149,10 +149,10 @@ async def optimize_prices(
     )
 
     results = []
-    total_current_revenue = 0
-    total_predicted_revenue = 0
-    total_current_profit = 0
-    total_predicted_profit = 0
+    total_current_revenue: float = 0.0
+    total_predicted_revenue: float = 0.0
+    total_current_profit: float = 0.0
+    total_predicted_profit: float = 0.0
 
     for product in request.products:
         # Use provided elasticity or default

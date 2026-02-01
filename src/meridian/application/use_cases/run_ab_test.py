@@ -122,12 +122,14 @@ class RunABTestUseCase:
         if self.experiment_repository:
             experiment = await self.experiment_repository.get(experiment_id)
         else:
+            from meridian.core.constants import ExperimentStatus
+
             experiment = Experiment(
                 id=experiment_id,
                 name="Test",
                 hypothesis="Test hypothesis",
             )
-            experiment.status = "running"
+            experiment.status = ExperimentStatus.RUNNING
 
         experiment.stop(results)
 

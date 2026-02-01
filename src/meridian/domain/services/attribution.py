@@ -263,10 +263,10 @@ class ShapleyAttribution:
     ) -> dict[str, dict]:
         """Calculate descriptive statistics for each channel."""
 
-        stats = defaultdict(
+        stats: dict[str, dict] = defaultdict(
             lambda: {
                 "frequency": 0,
-                "total_value": 0,
+                "total_value": 0.0,
                 "positions": [],
             }
         )
@@ -277,7 +277,7 @@ class ShapleyAttribution:
                 stats[channel]["total_value"] += value
                 stats[channel]["positions"].append(pos / len(path) if len(path) > 0 else 0)
 
-        result = {}
+        result: dict[str, dict] = {}
         total_conversions = len(conversion_paths)
 
         for channel, data in stats.items():

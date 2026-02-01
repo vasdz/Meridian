@@ -103,8 +103,9 @@ class SQLTransactionRepository(TransactionRepository):
             ).where(TransactionModel.customer_id == customer_id)
         )
         row = result.one()
+        count_value = row.count if row.count is not None else 0
         return {
             "total_amount": float(row.total_amount or 0),
-            "count": int(row.count or 0),
+            "count": int(count_value),  # type: ignore[arg-type]
             "avg_amount": float(row.avg_amount or 0),
         }

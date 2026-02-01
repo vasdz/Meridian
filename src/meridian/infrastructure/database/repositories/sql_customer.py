@@ -16,10 +16,15 @@ class SQLCustomerRepository(CustomerRepository):
 
     def _to_domain(self, model: CustomerModel) -> Customer:
         """Convert ORM model to domain entity."""
+        from meridian.core.constants import CustomerSegment
+
+        # Convert segment string to enum
+        segment = CustomerSegment(model.segment) if model.segment else CustomerSegment.NEW
+
         return Customer(
             id=model.id,
             external_id=model.external_id,
-            segment=model.segment,
+            segment=segment,
             region=model.region,
             channel=model.channel,
             age=model.age,
