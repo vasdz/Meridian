@@ -1,0 +1,47 @@
+# Gitleaks configuration for Meridian project
+# https://github.com/gitleaks/gitleaks
+
+title = "Meridian Gitleaks Configuration"
+
+[extend]
+# Extend default rules
+useDefault = true
+
+# Allow test keys that are dynamically generated
+[[rules]]
+id = "test-api-key-pattern"
+description = "Allow test API key patterns"
+regex = '''mk_test_[a-f0-9]{24,32}'''
+allowlist = true
+
+# Allowlist for specific paths (test files, examples)
+[allowlist]
+description = "Global allowlist for non-sensitive paths"
+
+paths = [
+    '''tests/.*''',
+    '''\.env\.example''',
+    '''\.env\.test''',
+    '''docs/.*''',
+    '''notebooks/.*''',
+]
+
+# Allowlist specific regex patterns for test credentials
+regexes = [
+    '''mk_test_.*''',
+    '''test_secret_.*''',
+    '''example_api_key.*''',
+    '''placeholder.*''',
+]
+
+# Stop words that indicate non-sensitive content
+stopwords = [
+    "example",
+    "placeholder",
+    "changeme",
+    "test",
+    "fake",
+    "mock",
+    "dummy",
+]
+

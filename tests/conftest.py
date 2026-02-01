@@ -98,6 +98,12 @@ def sample_experiment_data() -> dict:
 
 @pytest.fixture
 def auth_headers() -> dict:
-    """Authentication headers for testing."""
-    return {"X-API-Key": "mk_test_key_123456"}
+    """Authentication headers for testing.
+
+    Uses dynamically generated test API key to avoid secret detection.
+    """
+    import secrets
+    # Generate a unique test key for each test run
+    test_key = f"mk_test_{secrets.token_hex(16)}"
+    return {"X-API-Key": test_key}
 

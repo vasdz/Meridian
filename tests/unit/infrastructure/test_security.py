@@ -2,7 +2,7 @@
 
 import pytest
 
-from meridian.infrastructure.security.encryption import FieldEncryptor, encrypt_pii, decrypt_pii
+from meridian.infrastructure.security.encryption import FieldEncryptor
 from meridian.core.security import (
     hash_password,
     verify_password,
@@ -101,7 +101,9 @@ class TestAPIKeyGeneration:
 
     def test_hash_api_key(self):
         """Test API key hashing."""
-        key = "mk_test_key_123456"
+        # Use dynamically generated key to avoid secret detection
+        import secrets
+        key = f"mk_test_{secrets.token_hex(12)}"
         hashed = hash_api_key(key)
 
         assert hashed != key

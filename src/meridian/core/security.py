@@ -29,10 +29,13 @@ class Encryptor:
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+        # Use configurable salt from settings for enterprise deployments
+        salt = settings.encryption_salt.encode()[:32].ljust(16, b'\x00')
+
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=b"meridian-encryption-salt",
+            salt=salt,
             iterations=100000,
         )
         key = kdf.derive(secret.encode())

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")
+    encryption_salt: str = Field(
+        default="change-me-in-production-must-be-16-bytes",
+        alias="ENCRYPTION_SALT",
+        description="Salt for encryption key derivation (min 16 characters)"
+    )
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
     access_token_expire_minutes: int = Field(default=30)
     api_key_header: str = Field(default="X-API-Key")
