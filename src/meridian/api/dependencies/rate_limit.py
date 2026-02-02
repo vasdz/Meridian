@@ -23,37 +23,38 @@ class RateLimiter:
         self.burst_size = burst_size
         self._cache = RedisCache()
 
-    async def check_rate_limit(self, key: str) -> bool:
+    async def check_rate_limit(self, key: str, limit: int | None = None) -> bool:
         """Check if request is within rate limit."""
         if not settings.rate_limit_enabled:
             return True
 
         rate_key = f"rate:{key}"
+        effective_limit = limit or (self.requests_per_minute + self.burst_size)
 
         try:
             current = await self._cache.incr(rate_key)
 
             if current == 1:
-                # First request, set expiration
                 await self._cache.expire(rate_key, 60)
 
-            return current <= self.requests_per_minute
+            return current <= effective_limit
 
         except Exception as e:
             logger.warning("Rate limit check failed", error=str(e))
             return True  # Fail open
 
-    async def get_remaining(self, key: str) -> int:
+    async def get_remaining(self, key: str, limit: int | None = None) -> int:
         """Get remaining requests."""
         rate_key = f"rate:{key}"
+        effective_limit = limit or (self.requests_per_minute + self.burst_size)
 
         try:
             value = await self._cache.get(rate_key)
             if value is None:
-                return self.requests_per_minute
-            return max(0, self.requests_per_minute - int(value))
+                return effective_limit
+            return max(0, effective_limit - int(value))
         except Exception:
-            return self.requests_per_minute
+            return effective_limit
 
 
 # Default rate limiter instance
@@ -68,19 +69,35 @@ async def check_rate_limit(request: Request) -> None:
     if not settings.rate_limit_enabled:
         return
 
-    # Get client identifier (IP or API key)
     client_ip = request.client.host if request.client else "unknown"
     api_key = request.headers.get(settings.api_key_header, "")
+    user_id = getattr(request.state, "user_id", "")
 
-    key = api_key[:20] if api_key else client_ip
+    endpoint_key = f"{request.method}:{request.url.path}"
+    base_limit = settings.rate_limit_endpoint_limits.get(
+        endpoint_key,
+        settings.rate_limit_requests_per_minute,
+    )
+    burst_limit = settings.rate_limit_endpoint_burst.get(
+        endpoint_key,
+        settings.rate_limit_burst_size,
+    )
+    effective_limit = base_limit + burst_limit
 
-    if not await rate_limiter.check_rate_limit(key):
-        remaining = await rate_limiter.get_remaining(key)
+    if user_id:
+        key = f"user:{user_id}:{endpoint_key}"
+    elif api_key:
+        key = f"key:{api_key[:20]}:{endpoint_key}"
+    else:
+        key = f"ip:{client_ip}:{endpoint_key}"
+
+    if not await rate_limiter.check_rate_limit(key, limit=effective_limit):
+        remaining = await rate_limiter.get_remaining(key, limit=effective_limit)
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded",
             headers={
-                "X-RateLimit-Limit": str(settings.rate_limit_requests_per_minute),
+                "X-RateLimit-Limit": str(effective_limit),
                 "X-RateLimit-Remaining": str(remaining),
                 "Retry-After": "60",
             },

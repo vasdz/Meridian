@@ -21,6 +21,8 @@ XSS_PATTERNS = [
     r"<object",
 ]
 
+FEATURE_KEY_PATTERN = re.compile(r"^[a-zA-Z0-9_.-]{1,64}$")
+
 
 def sanitize_string(value: str, max_length: int = 1000) -> str:
     """Sanitize string input."""
@@ -72,6 +74,51 @@ def validate_experiment_name(name: str) -> str:
         )
 
     return sanitized
+
+
+def validate_identifier(value: str, name: str, max_length: int = 64) -> str:
+    """Validate generic identifier fields."""
+    value = sanitize_string(value, max_length=max_length)
+    if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", value):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid {name} format",
+        )
+    return value
+
+
+def validate_feature_payload(features: dict, max_keys: int = 200) -> dict:
+    """Validate feature payload for ML inference."""
+    if not isinstance(features, dict):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid features payload",
+        )
+
+    if len(features) > max_keys:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many features provided",
+        )
+
+    for key, value in features.items():
+        if not FEATURE_KEY_PATTERN.match(str(key)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid feature key: {key}",
+            )
+
+        if isinstance(value, str):
+            features[key] = sanitize_string(value, max_length=256)
+        elif isinstance(value, (int, float, bool)) or value is None:
+            continue
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid feature value type for key: {key}",
+            )
+
+    return features
 
 
 # Query parameter validators

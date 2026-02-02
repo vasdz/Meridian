@@ -1,5 +1,6 @@
 """Application configuration using Pydantic Settings."""
 
+import json
 from functools import lru_cache
 
 from pydantic import Field
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default=["*"])
 
     # Server
-    host: str = Field(default="0.0.0.0", alias="HOST")  # nosec B104 - configurable via env
+    host: str = Field(default="127.0.0.1", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
     workers: int = Field(default=4, alias="WORKERS")
 
@@ -89,6 +90,24 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = Field(default=True)
     rate_limit_requests_per_minute: int = Field(default=60)
     rate_limit_burst_size: int = Field(default=100)
+    rate_limit_endpoint_limits_raw: str = Field(
+        default="{}",
+        alias="RATE_LIMIT_ENDPOINT_LIMITS",
+        description="JSON mapping of METHOD:PATH to RPM limits",
+    )
+    rate_limit_endpoint_burst_raw: str = Field(
+        default="{}",
+        alias="RATE_LIMIT_ENDPOINT_BURST",
+        description="JSON mapping of METHOD:PATH to burst limits",
+    )
+
+    @property
+    def rate_limit_endpoint_limits(self) -> dict[str, int]:
+        return _parse_int_map(self.rate_limit_endpoint_limits_raw)
+
+    @property
+    def rate_limit_endpoint_burst(self) -> dict[str, int]:
+        return _parse_int_map(self.rate_limit_endpoint_burst_raw)
 
     # Vault
     vault_enabled: bool = Field(default=False, alias="VAULT_ENABLED")
@@ -125,6 +144,19 @@ class Settings(BaseSettings):
         alias="CELERY_RESULT_BACKEND",
     )
 
+    # Observability
+    tracing_enabled: bool = Field(default=False, alias="TRACING_ENABLED")
+    tracing_service_name: str = Field(default="meridian-api", alias="TRACING_SERVICE_NAME")
+    tracing_otlp_endpoint: str = Field(
+        default="http://localhost:4318/v1/traces",
+        alias="TRACING_OTLP_ENDPOINT",
+    )
+    log_response_body: bool = Field(default=False, alias="LOG_RESPONSE_BODY")
+    max_response_body_bytes: int = Field(default=16384, alias="MAX_RESPONSE_BODY_BYTES")
+
+    # Request limits
+    max_request_body_bytes: int = Field(default=262144, alias="MAX_REQUEST_BODY_BYTES")
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -134,3 +166,22 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
+
+
+def _parse_int_map(value: str) -> dict[str, int]:
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+
+    if not isinstance(payload, dict):
+        return {}
+
+    result: dict[str, int] = {}
+    for key, raw in payload.items():
+        try:
+            result[str(key)] = int(raw)
+        except (TypeError, ValueError):
+            continue
+
+    return result

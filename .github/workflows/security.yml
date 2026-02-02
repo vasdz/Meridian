@@ -55,7 +55,7 @@ jobs:
           version: "2.1.1"
 
       - name: Install poetry-plugin-export
-        run: poetry self add poetry-plugin-export
+        run: pipx inject poetry poetry-plugin-export
 
       - name: Export requirements
         run: poetry export -f requirements.txt --output requirements.txt --without-hashes
@@ -65,10 +65,10 @@ jobs:
           pip install pip-audit
           pip-audit -r requirements.txt --format json --output pip-audit-report.json || true
 
-      - name: Run safety
+      - name: Run safety scan
         run: |
           pip install safety
-          safety check -r requirements.txt --json > safety-report.json || true
+          safety scan -r requirements.txt --policy-file .safety-policy.yml --json > safety-report.json || true
 
       - name: Upload reports
         uses: actions/upload-artifact@v4
@@ -116,6 +116,9 @@ jobs:
 
   secret-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,4 +128,11 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --config=.gitleaks.toml --report-format=sarif --report-path=results.sarif
 
+      - name: Upload gitleaks results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif

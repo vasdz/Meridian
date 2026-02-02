@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from meridian.api.dependencies.auth import TokenData, get_current_user
 from meridian.api.dependencies.rate_limit import RateLimited
+from meridian.api.dependencies.security import validate_identifier
 from meridian.api.schemas.requests.uplift import (
     UpliftBatchPredictionRequest,
     UpliftPredictionRequest,
@@ -39,6 +40,10 @@ async def predict_uplift(
         user_id=current_user.user_id,
     )
 
+    model_id = validate_identifier(request.model_id, "model_id")
+    for customer_id in request.customer_ids:
+        validate_identifier(customer_id, "customer_id")
+
     # Placeholder predictions
     import random
 
@@ -55,7 +60,7 @@ async def predict_uplift(
 
     return UpliftPredictionResponse(
         predictions=predictions,
-        model_id=request.model_id,
+        model_id=model_id,
         model_version="1.0.0",
     )
 

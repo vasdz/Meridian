@@ -14,11 +14,11 @@
 
 *Enterprise-grade Marketing Analytics & Causal Inference Platform*
 
+[Docs Index](#-documentation) •
 [Getting Started](#-quick-start) •
 [Features](#-features) •
-[API Docs](#-api-documentation) •
-[Contributing](CONTRIBUTING.md) •
-[Security](SECURITY.md)
+[Architecture](#-architecture) •
+[Operations](#-operations)
 
 </div>
 
@@ -32,8 +32,21 @@ Meridian is a **production-ready ML platform** for retail analytics, providing:
 - 📈 **Demand Forecasting** — Multi-horizon probabilistic predictions
 - 💰 **Price Optimization** — Maximize profit with elasticity models
 - 🧪 **A/B Testing** — Design and analyze experiments
+- 🧭 **MLOps Foundations** — Model registry, monitoring, and auditability
 
 Built with **Clean Architecture** principles for enterprise scalability.
+
+---
+
+## 📚 Documentation
+
+| Document | English | Русский |
+|----------|---------|---------|
+| Project Overview | `README.md` | `docs/README_RU.md` |
+| OpenAPI Spec | `docs/api/openapi.yaml` | `docs/api/openapi.yaml` |
+| Architecture ADRs | `docs/architecture/adr/` | `docs/architecture/adr/` |
+| Security Policy | `SECURITY.md` | `SECURITY.md` |
+| Contributing | `CONTRIBUTING.md` | `CONTRIBUTING.md` |
 
 ---
 
@@ -192,7 +205,55 @@ Enterprise-grade security measures:
 | **Input** | Pydantic v2 strict validation |
 | **Dependencies** | Automated scanning (Snyk, pip-audit) |
 
-See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+See `SECURITY.md` for vulnerability reporting.
+
+---
+
+## 📈 Observability
+
+| Capability | Details |
+|------------|---------|
+| **Metrics** | Prometheus metrics at `/metrics` |
+| **Logs** | JSON structured logs with correlation IDs |
+| **Tracing** | OTLP-ready (Tempo/Jaeger compatible) |
+| **Audit** | Security audit trails for sensitive actions |
+
+### Tracing (OTLP)
+
+Enable tracing via environment variables:
+
+```bash
+TRACING_ENABLED=true
+TRACING_SERVICE_NAME=meridian-api
+TRACING_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+```
+
+The service reports `service.version` and `deployment.environment` attributes.
+
+### Request & Response Logging
+
+- Request bodies are redacted for PII keys and size-limited.
+- Optional response logging is controlled via `LOG_RESPONSE_BODY`.
+- Limits: `MAX_REQUEST_BODY_BYTES`, `MAX_RESPONSE_BODY_BYTES`.
+
+---
+
+## 🔁 API Versioning & Deprecation
+
+- Versioned endpoints (`/v1/...`) with backward-compatible defaults.
+- Deprecation strategy via headers and staged feature flags.
+- Compatibility notes are tracked in `CHANGELOG.md`.
+
+---
+
+## 🧰 Operations
+
+| Area | Approach |
+|------|----------|
+| **Model Registry** | MLflow tracking with signed artifacts (cosign-ready) |
+| **Feature Store** | Redis-backed feature access via `FeatureStore.get()` interface |
+| **GitOps** | ArgoCD-ready manifests in `deployments/k8s/` |
+| **Secrets** | External Secrets Operator / Vault integration |
 
 ---
 
@@ -240,7 +301,6 @@ meridian/
 │   ├── integration/        # External dependency tests
 │   ├── e2e/                # Full scenario tests
 │   └── security/           # Security-focused tests
-├── configs/                # Hydra configurations
 ├── deployments/            # Docker, Kubernetes
 ├── docs/                   # Documentation
 │   ├── architecture/       # ADRs, diagrams
@@ -314,38 +374,6 @@ Includes:
 
 ---
 
-## 📈 Monitoring
-
-### Metrics
-
-Prometheus endpoint at `/metrics`:
-- Request latency (histogram)
-- Request count by endpoint
-- Error rates
-- ML model inference time
-
-### Logging
-
-Structured JSON logging with:
-- Request correlation IDs
-- User context
-- Audit trail
-
----
-
-## 📖 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Architecture Decision Records](docs/architecture/adr/) | Why we chose specific technologies |
-| [C4 Diagrams](docs/architecture/diagrams/) | System context and containers |
-| [OpenAPI Specification](docs/api/openapi.yaml) | Full API documentation |
-| [Contributing Guide](CONTRIBUTING.md) | How to contribute |
-| [Security Policy](SECURITY.md) | Vulnerability reporting |
-| [Changelog](CHANGELOG.md) | Version history |
-
----
-
 ## 📄 License
 
 Proprietary - All rights reserved.
@@ -357,4 +385,3 @@ Proprietary - All rights reserved.
 **Made with ❤️ for enterprise ML teams**
 
 </div>
-

@@ -374,7 +374,7 @@ class Pipeline:
         """Generate unique run ID."""
         timestamp = datetime.now().isoformat()
         hash_input = f"{self.name}_{timestamp}"
-        return hashlib.sha256(hash_input.encode(), usedforsecurity=False).hexdigest()[:12]
+        return hashlib.sha256(hash_input.encode()).hexdigest()[:12]
 
     def run(
         self,

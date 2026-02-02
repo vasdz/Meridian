@@ -1,16 +1,16 @@
 """Audit dependencies for security vulnerabilities."""
 
+import json
 import subprocess
 import sys
-import json
 from datetime import datetime
 
 
 def run_safety_check():
-    """Run safety check on dependencies."""
-    print("Running safety check...")
+    """Run safety scan on dependencies."""
+    print("Running safety scan...")
     result = subprocess.run(
-        ["safety", "check", "--json"],
+        ["safety", "scan", "--policy-file", ".safety-policy.yml", "--json"],
         capture_output=True,
         text=True,
     )
@@ -20,10 +20,9 @@ def run_safety_check():
         return []
 
     try:
-        vulnerabilities = json.loads(result.stdout)
-        return vulnerabilities
+        return json.loads(result.stdout)
     except json.JSONDecodeError:
-        print(f"Warning: Could not parse safety output")
+        print("Warning: Could not parse safety output")
         return []
 
 
@@ -107,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

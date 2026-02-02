@@ -15,6 +15,8 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
 
     CORRELATION_ID_HEADER = "X-Correlation-ID"
     REQUEST_ID_HEADER = "X-Request-ID"
+    ORG_ID_HEADER = "X-Org-Id"
+    APP_ID_HEADER = "X-App-Id"
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Get or generate correlation ID
@@ -32,6 +34,8 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
         # Store in request state
         request.state.correlation_id = correlation_id
         request.state.request_id = request_id
+        request.state.org_id = request.headers.get(self.ORG_ID_HEADER)
+        request.state.app_id = request.headers.get(self.APP_ID_HEADER)
 
         # Process request
         response = await call_next(request)

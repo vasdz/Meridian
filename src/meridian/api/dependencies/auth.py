@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
@@ -77,18 +77,20 @@ async def validate_api_key(api_key: str) -> TokenData | None:
 
 
 async def get_current_user(
+    request: Request,
     bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
     api_key: Annotated[str | None, Security(api_key_header)] = None,
 ) -> TokenData:
     """Get current authenticated user from JWT or API key."""
-    # Try JWT first
     if bearer and bearer.credentials:
-        return decode_access_token(bearer.credentials)
+        token_data = decode_access_token(bearer.credentials)
+        request.state.user_id = token_data.user_id
+        return token_data
 
-    # Try API key
     if api_key:
         token_data = await validate_api_key(api_key)
         if token_data:
+            request.state.user_id = token_data.user_id
             return token_data
 
     raise HTTPException(
@@ -99,12 +101,13 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
+    request: Request,
     bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
     api_key: Annotated[str | None, Security(api_key_header)] = None,
 ) -> TokenData | None:
     """Get current user if authenticated, None otherwise."""
     try:
-        return await get_current_user(bearer, api_key)
+        return await get_current_user(request, bearer, api_key)
     except HTTPException:
         return None
 

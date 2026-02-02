@@ -9,14 +9,14 @@ useDefault = true
 # Global allowlist for paths that should be ignored
 [allowlist]
 description = "Global allowlist"
-paths = [
-    '''tests/.*''',
-    '''\.env\.example''',
-    '''\.env\.test''',
-    '''docs/.*''',
-    '''notebooks/.*''',
+regexTarget = "path"
+regexes = [
+    "^tests/",
+    "^docs/",
+    "^notebooks/",
+    "^\\.env\\.example$",
+    "^\\.env\\.test$",
 ]
-regexTarget = "match"
 stopwords = [
     "example",
     "placeholder",
@@ -27,4 +27,3 @@ stopwords = [
     "dummy",
     "mk_test_",
 ]
-

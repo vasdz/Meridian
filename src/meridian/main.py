@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from meridian.api.middleware.body_limit import BodySizeLimitMiddleware
 from meridian.api.middleware.correlation import CorrelationMiddleware
 from meridian.api.middleware.exception_handler import setup_exception_handlers
 from meridian.api.middleware.security_headers import SecurityHeadersMiddleware
@@ -23,6 +24,7 @@ from meridian.api.routers.v1 import (
 )
 from meridian.core.config import settings
 from meridian.core.logging import setup_logging
+from meridian.core.tracing import setup_tracing
 from meridian.infrastructure.cache.redis_cache import close_redis, init_redis
 from meridian.infrastructure.database.connection import close_db, init_db
 
@@ -30,14 +32,13 @@ from meridian.infrastructure.database.connection import close_db, init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan manager."""
-    # Startup
     setup_logging()
+    setup_tracing(app)
     await init_db()
     await init_redis()
 
     yield
 
-    # Shutdown
     await close_db()
     await close_redis()
 
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
 
     # Middleware (order matters - first added = outermost)
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(BodySizeLimitMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
