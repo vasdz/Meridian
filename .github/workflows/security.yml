@@ -65,10 +65,10 @@ jobs:
           pip install pip-audit
           pip-audit -r requirements.txt --format json --output pip-audit-report.json || true
 
-      - name: Run safety scan
+      - name: Run safety check
         run: |
           pip install safety
-          safety scan -r requirements.txt --policy-file .safety-policy.yml --json > safety-report.json || true
+          safety check -r requirements.txt --policy-file .safety-policy.yml --output json > safety-report.json || true
 
       - name: Upload reports
         uses: actions/upload-artifact@v4

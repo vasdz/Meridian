@@ -355,10 +355,4 @@ make test-security
 5. Ответьте на feedback
 6. Сквошьте коммиты при запросе
 
----
-
-## Questions? | Вопросы?
-
-- Open a [Discussion](https://github.com/your-org/meridian/discussions)
-- Email: team@meridian-analytics.io
 

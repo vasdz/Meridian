@@ -134,7 +134,7 @@ jobs:
       - name: Run bandit
         run: poetry run bandit -r src -ll
 
-      - name: Run safety scan
+      - name: Run safety check
         continue-on-error: true
         run: |
-          poetry run safety scan --policy-file .safety-policy.yml --json || true
+          poetry run safety check --policy-file .safety-policy.yml --output json || true
