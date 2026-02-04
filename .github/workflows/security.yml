@@ -49,13 +49,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: "2.1.1"
-
-      - name: Install poetry-plugin-export
-        run: pipx inject poetry poetry-plugin-export
+      - name: Install Poetry with export plugin
+        run: |
+          pipx install poetry==2.1.1
+          pipx inject poetry poetry-plugin-export
 
       - name: Export requirements
         run: poetry export -f requirements.txt --output requirements.txt --without-hashes
@@ -128,11 +125,4 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --config=.gitleaks.toml --report-format=sarif --report-path=results.sarif
-
-      - name: Upload gitleaks results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: results.sarif
+          GITLEAKS_CONFIG: .gitleaks.toml

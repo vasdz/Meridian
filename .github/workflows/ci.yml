@@ -27,13 +27,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-
-      - name: Install poetry-plugin-export
-        run: pipx inject poetry poetry-plugin-export
+      - name: Install Poetry with export plugin
+        run: |
+          pipx install poetry==${{ env.POETRY_VERSION }}
+          pipx inject poetry poetry-plugin-export
 
       - name: Install dependencies
         run: poetry install --no-interaction
@@ -77,13 +74,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-
-      - name: Install poetry-plugin-export
-        run: pipx inject poetry poetry-plugin-export
+      - name: Install Poetry with export plugin
+        run: |
+          pipx install poetry==${{ env.POETRY_VERSION }}
+          pipx inject poetry poetry-plugin-export
 
       - name: Install dependencies
         run: poetry install --no-interaction
@@ -120,13 +114,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-
-      - name: Install poetry-plugin-export
-        run: pipx inject poetry poetry-plugin-export
+      - name: Install Poetry with export plugin
+        run: |
+          pipx install poetry==${{ env.POETRY_VERSION }}
+          pipx inject poetry poetry-plugin-export
 
       - name: Install dependencies
         run: poetry install --no-interaction
